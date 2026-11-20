@@ -11,10 +11,10 @@ Working rules and status for contributors and coding agents. User-facing usage b
 | `internal/logging` | Done. File logging, redaction, HTTP round tripper. |
 | `internal/oauth` | Done. Login, token, refresh, client credentials, `private_key_jwt`, revoke. |
 | `internal/input` | Done. The `-d` reader, `login` payload and `--template`. |
-| Command layer | `login`, `main` and the Makefile are done (see [`docs/login.md`](login.md)). `logout` and `context ...` are next, when asked. |
+| Command layer | `login` ([`docs/login.md`](login.md)), `context` ([`docs/context.md`](context.md)), `main` and the Makefile are done. `logout` is next, when asked. |
 | `AGENTS.md` | With the command layer. It describes how agents and IDEs use the CLI. |
 
-Scope today is `login` (`internal/cmd`, `cmd/ibm-agentid`) on top of the libraries under `internal/`. Commands are plain cobra, wired in code: one constructor per command, shared flags in `internal/cmd/data.go`, no registry or executor interface. Help text goes through `i18n`, and `--help` must stand alone because users only have the binary.
+Scope today is `login` and `context` (`internal/cmd`, `cmd/ibm-agentid`) on top of the libraries under `internal/`. Commands are plain cobra, wired in code: one constructor per command, shared flags in `internal/cmd/data.go`, no registry or executor interface. Help text goes through `i18n`, and `--help` must stand alone because users only have the binary.
 
 ## Build
 
@@ -32,6 +32,7 @@ Scope today is `login` (`internal/cmd`, `cmd/ibm-agentid`) on top of the librari
 | `internal/i18n/spec.md` | Localization. |
 | `internal/logging/spec.md` | Logging. |
 | `docs/login.md` | The `login` command: flags, data, behavior. |
+| `docs/context.md` | The `context` commands. |
 | `docs/environment-variables.md` | Every environment variable. |
 
 ## Process

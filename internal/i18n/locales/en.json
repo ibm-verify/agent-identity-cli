@@ -115,6 +115,38 @@
     "description": "The user's home directory could not be determined, so the CLI cannot locate its state directory (~/.ibm-agentid). Error is the underlying system error.",
     "other": "could not determine the home directory: {{.Error}}"
   },
+  "context.col_name": {
+    "description": "Column heading in the context list: the context name.",
+    "other": "NAME"
+  },
+  "context.col_server": {
+    "description": "Column heading in the context list: the server URL.",
+    "other": "SERVER"
+  },
+  "context.col_token": {
+    "description": "Column heading in the context list: the state of the cached token.",
+    "other": "TOKEN"
+  },
+  "context.current_short": {
+    "description": "Short help text of the context current command.",
+    "other": "Print the name of the active context"
+  },
+  "context.delete_aborted": {
+    "description": "Error when the user does not confirm deleting a context, or there is no input to confirm with.",
+    "other": "not deleted: confirmation is needed, so answer yes or use --yes"
+  },
+  "context.delete_confirm": {
+    "description": "Prompt before deleting a context, answered on standard input. Name is the context name. The text ends with a space because the answer follows on the same line.",
+    "other": "Delete the context \"{{.Name}}\" and its cached token? [y/N] "
+  },
+  "context.delete_short": {
+    "description": "Short help text of the context delete command.",
+    "other": "Delete a context and its cached token"
+  },
+  "context.deleted": {
+    "description": "Printed after a context is deleted. Name is the context name.",
+    "other": "Deleted the context \"{{.Name}}\"."
+  },
   "context.exists": {
     "description": "Error when renaming a context to a name that is already registered. Name is the existing context name.",
     "other": "context \"{{.Name}}\" already exists"
@@ -123,6 +155,18 @@
     "description": "Error when a context name has characters or a length that is not allowed. Name is the rejected name.",
     "other": "invalid context name \"{{.Name}}\": use letters, digits, '.', '_' or '-', start with a letter or digit, and keep it to 64 characters or fewer"
   },
+  "context.list_empty": {
+    "description": "Printed by context list when no context is saved.",
+    "other": "No contexts are saved. Run \"ibm-agentid login\" to create one."
+  },
+  "context.list_short": {
+    "description": "Short help text of the context list command.",
+    "other": "List the saved contexts"
+  },
+  "context.long": {
+    "description": "Long help text of the context command. The subcommand names are literal and must not be translated.",
+    "other": "Manage the saved contexts. A context holds the server, TLS and OAuth settings of one deployment, and has its own cached token.\n\nThe active context is chosen, in order, by the --context flag, the IBM_AGENTID_CONTEXT environment variable, the current context, and then \"default\".\n\nSubcommands: list, use, current, view, rename, delete."
+  },
   "context.nil_environment": {
     "description": "Internal error when a context is saved without any environment settings. Name is the context name.",
     "other": "context \"{{.Name}}\" has no environment settings"
@@ -130,6 +174,50 @@
   "context.not_found": {
     "description": "Error when a named context is not registered in config.yaml. Name is the context name.",
     "other": "context \"{{.Name}}\" not found"
+  },
+  "context.rename_short": {
+    "description": "Short help text of the context rename command.",
+    "other": "Rename a context and move its cached token"
+  },
+  "context.renamed": {
+    "description": "Printed after a context is renamed. Old and New are the context names.",
+    "other": "Renamed the context \"{{.Old}}\" to \"{{.New}}\"."
+  },
+  "context.short": {
+    "description": "Short help text of the context command.",
+    "other": "Manage the saved contexts"
+  },
+  "context.token_expired": {
+    "description": "Token state in the context list: the cached token has expired.",
+    "other": "expired"
+  },
+  "context.token_none": {
+    "description": "Token state in the context list: there is no cached token.",
+    "other": "none"
+  },
+  "context.token_stale": {
+    "description": "Token state in the context list: the cached token was issued for different settings and is ignored.",
+    "other": "stale"
+  },
+  "context.token_valid": {
+    "description": "Token state in the context list: the cached token is usable.",
+    "other": "valid"
+  },
+  "context.use_short": {
+    "description": "Short help text of the context use command.",
+    "other": "Make a context the current one"
+  },
+  "context.used": {
+    "description": "Printed after the current context is changed. Name is the context name.",
+    "other": "The current context is now \"{{.Name}}\"."
+  },
+  "context.view_short": {
+    "description": "Short help text of the context view command.",
+    "other": "Show the settings of a context"
+  },
+  "context.yes_flag": {
+    "description": "Help text of the context delete --yes flag.",
+    "other": "Delete without asking for confirmation."
   },
   "data.data_flag": {
     "description": "Help text of the -d/--data flag, shared by every command that takes data.",

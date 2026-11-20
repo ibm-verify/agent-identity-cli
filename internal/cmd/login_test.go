@@ -50,11 +50,18 @@ func loginData(issuer, extra string) string {
 		"  auth_type: client_secret_post\n" + extra
 }
 
-// run executes the CLI and returns stdout, stderr and the error.
+// run executes the CLI with empty stdin and returns stdout, stderr and the error.
 func run(t *testing.T, args ...string) (string, string, error) {
+	t.Helper()
+	return runWithInput(t, "", args...)
+}
+
+// runWithInput is run with the given text on stdin.
+func runWithInput(t *testing.T, stdin string, args ...string) (string, string, error) {
 	t.Helper()
 	var out, errOut bytes.Buffer
 	root := NewRoot("test")
+	root.SetIn(strings.NewReader(stdin))
 	root.SetOut(&out)
 	root.SetErr(&errOut)
 	root.SetArgs(args)

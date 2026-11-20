@@ -30,6 +30,6 @@ func NewRoot(version string) *cobra.Command {
 	}
 	root.PersistentFlags().StringVar(&opts.context, "context", "", i18n.T("root.context_flag", nil))
 
-	root.AddCommand(newLogin(opts))
+	root.AddCommand(newLogin(opts), newContext(opts))
 	return root
 }
