@@ -129,7 +129,7 @@ Every API command resolves its target context in descending order of precedence:
 2. **`IBM_AGENTID_CONTEXT`** environment variable
 3. **`current-context`** in `~/.ibm-agentid/config.yaml` (defaults to `"default"`)
 
-*(Optional CI Escape Hatch: If `IBM_AGENTID_TOKEN` and `IBM_AGENTID_SERVER` are both set in the environment, the CLI uses them directly without reading `config.yaml` or `cache/`.)*
+**Stateless mode (CI).** The resource commands (`get`, `create`, `replace`, `patch`, `delete`) also accept `IBM_AGENTID_SERVER` and `IBM_AGENTID_TOKEN`. When either is set, both must be, and the CLI uses them directly without reading or writing `config.yaml` or `cache/`. An explicit `--context` wins and selects a saved context. The token is not refreshed. See [`internal/resource/spec.md`](../resource/spec.md) §7.1.
 
 ---
 

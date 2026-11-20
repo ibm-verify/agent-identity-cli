@@ -182,7 +182,7 @@ The same client goes to discovery and to the SDK client, so TLS settings and req
 | :--- | :--- |
 | `IBM_AGENTID_CLIENT_SECRET` | Client secret for a `client_secret_post` context, used only when the context has no saved `oauth.client_secret`. Never written to disk. |
 
-The implementing change moves it from the "Planned" table in [`docs/environment-variables.md`](../../docs/environment-variables.md) to a new "Authentication" section. `IBM_AGENTID_TOKEN` and `IBM_AGENTID_SERVER` stay planned: the command layer decides whether to use the provider at all.
+The implementing change moves it from the "Planned" table in [`docs/environment-variables.md`](../../docs/environment-variables.md) to a new "Authentication" section. `IBM_AGENTID_TOKEN` and `IBM_AGENTID_SERVER` are not read here: the command layer decides whether to use the provider at all, and in stateless mode it does not (see [`internal/resource/spec.md`](../resource/spec.md) §7.1).
 
 ---
 

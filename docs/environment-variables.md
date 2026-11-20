@@ -53,11 +53,21 @@ See [`internal/oauth/spec.md`](../internal/oauth/spec.md).
 | :--- | :--- | :--- |
 | `IBM_AGENTID_CLIENT_SECRET` | Client secret for a `client_secret_post` context, used only when the context has no saved `oauth.client_secret`. A saved value always wins. The variable is read in memory and never written to disk. | unset |
 
+## Stateless mode
+
+For CI, where there is no saved context. See [`internal/resource/spec.md`](../internal/resource/spec.md) §7.1. Only the resource commands (`get`, `create`, `replace`, `patch`, `delete`) use these.
+
+| Variable | Effect | Default |
+| :--- | :--- | :--- |
+| `IBM_AGENTID_SERVER` | Base URL of the server, an `http` or `https` URL. Used together with the token. | unset |
+| `IBM_AGENTID_TOKEN` | A bearer token, used as is. It is not refreshed, so an expired token fails with the server's `401`. | unset |
+
+* When either is set, both must be, or the command fails. A saved context is not used as a fallback.
+* `config.yaml` and `cache/` are not read or written.
+* `--context` wins: the variables are then ignored and the saved context is used.
+* The system trust store is used. A server with a private CA needs a saved context.
+* The token is visible to anything that can read the process environment. It is never printed, logged or saved.
+
 ## Planned (not yet implemented)
 
-These are described in [`internal/profile/spec.md`](../internal/profile/spec.md) and are not read by any code yet. Move each one above when it is implemented.
-
-| Variable | Intended effect |
-| :--- | :--- |
-| `IBM_AGENTID_SERVER` | Base URL of the server. Together with `IBM_AGENTID_TOKEN`, runs the CLI without `config.yaml` or `cache/`. |
-| `IBM_AGENTID_TOKEN` | A bearer token to use directly, for CI. |
+Nothing is planned. Add a variable here, in the same change that documents it, before code uses it. Move it above when it is implemented.

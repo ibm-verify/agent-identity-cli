@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"encoding/json"
 	"log/slog"
-	"net/url"
 	"strings"
 
 	"go.yaml.in/yaml/v3"
@@ -92,7 +91,7 @@ func ParseLogin(d *Data, contextFlag string) (*Login, error) {
 		return nil, err
 	}
 
-	if u, err := url.Parse(l.Server); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil {
+	if !ValidServer(l.Server) {
 		return nil, i18n.Wrap(ErrInvalidInput, "input.invalid_server", nil)
 	}
 	if strings.TrimSpace(l.OAuth.Issuer) == "" {

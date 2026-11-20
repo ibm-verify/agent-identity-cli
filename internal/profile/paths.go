@@ -49,6 +49,9 @@ func CacheDir() (string, error) {
 	return filepath.Join(dir, cacheDirName), nil
 }
 
+// WriteFileAtomic is writeFileAtomic for state kept outside this package.
+func WriteFileAtomic(path string, data []byte) error { return writeFileAtomic(path, data) }
+
 // writeFileAtomic writes data to path by writing a temporary file in the same
 // directory and renaming it over the destination. The parent directory is
 // created with 0700 if it does not exist.

@@ -14,9 +14,16 @@ type dataFlags struct {
 	output   string
 }
 
-func (d *dataFlags) add(cmd *cobra.Command) {
+// addInput adds -d and --template. A command that formats its own output adds
+// its own -o.
+func (d *dataFlags) addInput(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.StringVarP(&d.file, "data", "d", "", i18n.T("data.data_flag", nil))
 	f.BoolVar(&d.template, "template", false, i18n.T("data.template_flag", nil))
-	f.StringVarP(&d.output, "output", "o", "yaml", i18n.T("data.output_flag", nil))
+}
+
+// add adds -d, --template and an -o that sets the format of --template.
+func (d *dataFlags) add(cmd *cobra.Command) {
+	d.addInput(cmd)
+	cmd.Flags().StringVarP(&d.output, "output", "o", "yaml", i18n.T("data.output_flag", nil))
 }

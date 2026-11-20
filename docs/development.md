@@ -1,6 +1,6 @@
 # Development
 
-Working rules and status for contributors and coding agents. User-facing usage lives in the per-command docs (`docs/login.md`, `docs/context.md`) and, later, `README.md` and `AGENTS.md`.
+Working rules and status for contributors and coding agents. User-facing usage lives in the per-command docs (`docs/login.md`, `docs/context.md`, `docs/get.md`, `docs/create.md`, `docs/replace.md`, `docs/patch.md`, `docs/delete.md`, `docs/resources.md`) and, later, `README.md` and `AGENTS.md`.
 
 ## Status
 
@@ -12,14 +12,17 @@ Working rules and status for contributors and coding agents. User-facing usage l
 | `internal/oauth` | Done. Login, token, refresh, client credentials, `private_key_jwt`, revoke. |
 | `internal/input` | Done. The `-d` reader, `login` payload and `--template`. |
 | Command layer | `login` ([`docs/login.md`](login.md)), `context` ([`docs/context.md`](context.md)), `main` and the Makefile are done. |
+| Resource commands | `get`, `create`, `replace`, `patch` and `delete` ([`docs/resources.md`](resources.md)) are done, with the stand-in resource `foo`. Spec: `internal/resource/spec.md`. Real resources are added from generated models, using `foo` as the example. |
+| Stateless mode | `IBM_AGENTID_TOKEN` / `IBM_AGENTID_SERVER` are done for the resource commands ([`docs/environment-variables.md`](environment-variables.md#stateless-mode)). |
 | `logout` | Next, when asked. Spec: `internal/profile/spec.md` §6. `oauth.Provider.Revoke` and `profile.DeleteToken` / `DeleteAllTokens` already exist. |
-| Not started | `--log-*` flags, the `IBM_AGENTID_TOKEN` / `IBM_AGENTID_SERVER` bypass, `README.md`, `AGENTS.md` (how agents and IDEs use the CLI). |
+| Not started | `--log-*` flags, `README.md`, `AGENTS.md` (how agents and IDEs use the CLI). |
 
 ## Layout
 
 * `cmd/ibm-agentid`: `main` only. It sets the language, starts logging, handles Ctrl-C and exits 1 on error.
-* `internal/cmd`: the commands. `root.go` builds the root, `data.go` holds the shared `-d` / `--template` / `-o` flags, and each command has its own file and test.
-* `internal/input`: reads `-d` data, parses the payload, prints templates.
+* `internal/cmd`: the commands. `root.go` builds the root, `data.go` holds the shared `-d` / `--template` / `-o` flags, and each command has its own file and test. The resource verbs are `get.go`, `write.go` (`create`, `replace` and `patch`) and `delete.go`. `target.go` lists the resources and parses `<id>` / `--name`, and `connect.go` gets the server and a valid token.
+* `internal/resource`: what the resource verbs need to know about one kind of object (`Def`), and one package per resource. `internal/resource/foo` is the stand-in and the example to copy.
+* `internal/input`: reads `-d` data, decodes it into a payload type, prints templates.
 * `internal/oauth`, `internal/profile`, `internal/i18n`, `internal/logging`: the libraries the commands call.
 
 ## Build
@@ -29,7 +32,7 @@ Working rules and status for contributors and coding agents. User-facing usage l
 
 ## Adding a command
 
-Commands are plain cobra, wired in code: no registry, no executor interface.
+Commands are plain cobra, wired in code, with no `init()` self-registration. `login` and `context` are standalone constructors. The resource verbs (`get`, `create`, `replace`, `patch`, `delete`) are the exception: they share one `resource.Def` per resource, and `resources()` in `internal/cmd/target.go` lists them by hand. To add a resource, not a command, follow `internal/resource/spec.md` §10.
 
 1. Write the requirement in the spec, or in the command's doc if the spec already covers it. Add `docs/<command>.md` (usage, flags, output, examples) and a row in the table below.
 2. Add `internal/cmd/<command>.go` with one constructor, `newX(opts *options)`, and register it in `NewRoot`. The work goes in ordinary `runX` functions that `RunE` calls.
@@ -51,8 +54,10 @@ Commands are plain cobra, wired in code: no registry, no executor interface.
 | `internal/input/spec.md` | The `-d` data input, `@` file references, the `login` payload, `--template`. |
 | `internal/i18n/spec.md` | Localization. |
 | `internal/logging/spec.md` | Logging. |
+| `internal/resource/spec.md` | The resource commands: verbs, targets, data, stateless mode, how to add a resource. |
 | `docs/login.md` | The `login` command: flags, data, behavior. |
 | `docs/context.md` | The `context` commands. |
+| `docs/get.md`, `docs/create.md`, `docs/replace.md`, `docs/patch.md`, `docs/delete.md`, `docs/resources.md` | The resource commands and the resources. |
 | `docs/environment-variables.md` | Every environment variable. |
 
 ## Process

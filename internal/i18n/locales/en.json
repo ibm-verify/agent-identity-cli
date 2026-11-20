@@ -219,6 +219,18 @@
     "description": "Help text of the context delete --yes flag.",
     "other": "Delete without asking for confirmation."
   },
+  "create.done": {
+    "description": "Confirmation on stderr after create. Singular is the resource name and ID is the new object's ID.",
+    "other": "Created {{.Singular}} {{.ID}}."
+  },
+  "create.long": {
+    "description": "Long help text of the create command. Flag names are literal and must not be translated.",
+    "other": "Create an object. The data is read with -d from a file or from stdin (-), as YAML or JSON. Use --template to print a skeleton.\n\nThe server assigns the ID. If the data has read-only properties, such as the output of get, they are ignored.\n\nThe new object is printed. A secret that the server returns only once is shown in that output and cannot be read again."
+  },
+  "create.short": {
+    "description": "Short help text of the create command.",
+    "other": "Create an object from data"
+  },
   "data.data_flag": {
     "description": "Help text of the -d/--data flag, shared by every command that takes data.",
     "other": "Path to the data file, or - for stdin. YAML or JSON."
@@ -230,6 +242,66 @@
   "data.template_flag": {
     "description": "Help text of the --template flag, shared by every command that takes data.",
     "other": "Print a skeleton of the data and exit."
+  },
+  "delete.aborted": {
+    "description": "Error when delete is not confirmed.",
+    "other": "not deleted: confirmation is needed, so answer yes or use --yes"
+  },
+  "delete.confirm": {
+    "description": "Prompt on stderr before delete. Singular is the resource name and Target is the ID or the name that was given. Ends with a space.",
+    "other": "Delete the {{.Singular}} \"{{.Target}}\"? [y/N] "
+  },
+  "delete.done": {
+    "description": "Confirmation on stderr after delete. Singular is the resource name and ID is the object's ID.",
+    "other": "Deleted {{.Singular}} {{.ID}}."
+  },
+  "delete.long": {
+    "description": "Long help text of the delete command.",
+    "other": "Delete one object, by ID or with --name. The command asks for confirmation first; use --yes to skip it. With no input, the answer is no.\n\nIf the server refuses, for example because the object is still in use, its message is shown."
+  },
+  "delete.resource_short": {
+    "description": "Short help text of delete for one resource. Resource is the plural resource name.",
+    "other": "Delete one of the {{.Resource}}"
+  },
+  "delete.short": {
+    "description": "Short help text of the delete command.",
+    "other": "Delete an object"
+  },
+  "delete.yes_flag": {
+    "description": "Help text of the delete --yes flag.",
+    "other": "Delete without asking for confirmation."
+  },
+  "get.limit_flag": {
+    "description": "Help text of the get --limit flag.",
+    "other": "Largest number of objects to list."
+  },
+  "get.long": {
+    "description": "Long help text of the get command.",
+    "other": "Show one object by ID or with --name, or list objects when neither is given.\n\nA single object is printed as yaml (the default) or json. A list is printed as a table (the default), yaml or json. The yaml and json of one object is accepted by replace and patch, so a typical edit is: get, change the file, then replace or patch.\n\nSecrets are hidden in the output."
+  },
+  "get.output_flag": {
+    "description": "Help text of the get -o/--output flag.",
+    "other": "Output format: table (lists only), yaml or json."
+  },
+  "get.page_flag": {
+    "description": "Help text of the get --page flag.",
+    "other": "Page of the list to show, starting at 1. Use it with --limit."
+  },
+  "get.resource_short": {
+    "description": "Short help text of get for one resource. Resource is the plural resource name.",
+    "other": "Show or list {{.Resource}}"
+  },
+  "get.search_flag": {
+    "description": "Help text of the get --search flag.",
+    "other": "Only list objects whose name contains this text."
+  },
+  "get.short": {
+    "description": "Short help text of the get command.",
+    "other": "Show one object or list objects"
+  },
+  "get.sort_flag": {
+    "description": "Help text of the get --sort flag.",
+    "other": "Property to sort the list by."
   },
   "input.empty": {
     "description": "Error when the -d data is empty or only whitespace.",
@@ -306,6 +378,106 @@
   "login.timeout_flag": {
     "description": "Help text of the login --timeout flag.",
     "other": "How long to wait for the browser sign-in (default 5m)."
+  },
+  "patch.done": {
+    "description": "Confirmation on stderr after patch. Singular is the resource name and ID is the object's ID.",
+    "other": "Patched {{.Singular}} {{.ID}}."
+  },
+  "patch.long": {
+    "description": "Long help text of the patch command. Flag names are literal and must not be translated.",
+    "other": "Change some properties of an object. The data is read with -d from a file or from stdin (-), and holds only the properties to change, laid out as in the object itself. Give the object's ID, or use --name.\n\nA property that the data leaves out is not touched. How the server treats a null, a list or a nested object is defined by its API, and the CLI sends the data as it is; the help of each resource says more. To replace the whole object, use replace.\n\nRead-only properties are ignored. The updated object is printed."
+  },
+  "patch.short": {
+    "description": "Short help text of the patch command.",
+    "other": "Change some properties of an object"
+  },
+  "replace.done": {
+    "description": "Confirmation on stderr after replace. Singular is the resource name and ID is the object's ID.",
+    "other": "Replaced {{.Singular}} {{.ID}}."
+  },
+  "replace.long": {
+    "description": "Long help text of the replace command. Flag names are literal and must not be translated.",
+    "other": "Replace an object with the data, read with -d from a file or from stdin (-). Give the object's ID, or use --name.\n\nThis is a full update: a property that the data leaves out is cleared or set to its default by the server. To change only some properties, use patch.\n\nIf the data has an \"id\" it must match the object. The updated object is printed."
+  },
+  "replace.short": {
+    "description": "Short help text of the replace command.",
+    "other": "Replace an object with data"
+  },
+  "resource.ambiguous_name": {
+    "description": "Error when --name matches more than one object. Singular is the resource name, Name is the name given, IDs is a comma-separated list of the matching IDs.",
+    "other": "more than one {{.Singular}} is named \"{{.Name}}\" ({{.IDs}}); use the ID instead"
+  },
+  "resource.data_required": {
+    "description": "Error when create, replace or patch has no -d and no --template. Verb is the command name.",
+    "other": "{{.Verb}} needs the data: use -d <file> (or -d - for stdin), or --template to print a skeleton"
+  },
+  "resource.env_missing": {
+    "description": "Error when only one of the two stateless-mode environment variables is set. Missing is the name of the one that is not set.",
+    "other": "{{.Missing}} must also be set: the server and the token are used together"
+  },
+  "resource.id_mismatch": {
+    "description": "Error when the data names an object by an id property that differs from the object the command targets. The id is not quoted because it is data.",
+    "other": "the data has an \"id\" that differs from the object being changed; remove it or use the matching ID"
+  },
+  "resource.invalid_env_server": {
+    "description": "Error when the server environment variable is not an http or https URL with a host and no user name or password. Name is the variable name.",
+    "other": "{{.Name}} must be an http or https URL with a host and no user name or password"
+  },
+  "resource.invalid_token": {
+    "description": "Error when the token environment variable has spaces or control characters. The value is never shown. Name is the variable name.",
+    "other": "{{.Name}} must not contain spaces or control characters"
+  },
+  "resource.list_flag_with_target": {
+    "description": "Error when a list flag is used together with an ID or --name. Flag is the flag name.",
+    "other": "--{{.Flag}} is for lists and cannot be used with an ID or --name"
+  },
+  "resource.name_flag": {
+    "description": "Help text of the --name flag of the resource commands.",
+    "other": "Name of the object, if you do not give its ID."
+  },
+  "resource.no_context": {
+    "description": "Error when no saved context matches. Name is the context that was looked for.",
+    "other": "context \"{{.Name}}\" is not saved; run 'ibm-agentid login' to create it, or set IBM_AGENTID_SERVER and IBM_AGENTID_TOKEN"
+  },
+  "resource.none_found": {
+    "description": "Note on stderr when a list is empty. Resource is the plural resource name.",
+    "other": "No {{.Resource}} found."
+  },
+  "resource.not_found": {
+    "description": "Error when the target of a command does not exist. Singular is the resource name, such as foo, and Target is the ID or name that was given.",
+    "other": "no {{.Singular}} \"{{.Target}}\" was found"
+  },
+  "resource.patch_empty": {
+    "description": "Error when the data of a patch has no properties that can be changed, after the read-only ones are dropped.",
+    "other": "the data has nothing to change: a patch needs at least one property that can be set"
+  },
+  "resource.table_one": {
+    "description": "Error when -o table is used to show one object.",
+    "other": "the table format is for lists; use yaml or json for one object"
+  },
+  "resource.target_both": {
+    "description": "Error when both an ID and --name are given.",
+    "other": "give an ID or --name, not both"
+  },
+  "resource.target_required": {
+    "description": "Error when a command that needs a target has neither an ID nor --name. Singular is the resource name.",
+    "other": "say which {{.Singular}}: give its ID, or use --name"
+  },
+  "resource.token_hint": {
+    "description": "Hint printed after the server rejects a token that came from the environment, because the CLI cannot refresh it. Name is the variable name.",
+    "other": "hint: {{.Name}} may have expired"
+  },
+  "resource.unauthorized": {
+    "description": "Error when the server rejects the token (HTTP 401).",
+    "other": "the server rejected the token"
+  },
+  "resource.unknown_output": {
+    "description": "Error when -o has a value the command does not support. Format is what was given and Allowed is a comma-separated list.",
+    "other": "unknown output format \"{{.Format}}\"; use {{.Allowed}}"
+  },
+  "resource.write_short": {
+    "description": "Short help text of create, replace and patch for one resource. Resource is the plural resource name and Verb is the command name.",
+    "other": "{{.Verb}} {{.Resource}}"
   },
   "root.context_flag": {
     "description": "Help text of the global --context flag.",

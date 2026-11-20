@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Commands that take structured input read it with `-d <path>` or `-d -` (stdin, which covers heredocs and pipes). `login` is the first. This package reads that data, parses the `login` payload and prints the `--template` skeleton.
+Commands that take structured input read it with `-d <path>` or `-d -` (stdin, which covers heredocs and pipes). `login` is the first. This package reads that data, parses the `login` payload and prints the `--template` skeleton. The resource commands use the same reader. They decode the data into the resource's payload type with `Decode`, which needs a `json` and a `yaml` tag with the same name on every property, and print their skeletons with `TemplateText`. See [`internal/resource/spec.md`](../resource/spec.md).
 
 ### Design principles
 
@@ -81,5 +81,5 @@ The command layer builds a provider from `Login.Environment`, logs in, and saves
 ## 8. Out of scope
 
 * Flags, cobra, printing and the command layer.
-* The `IBM_AGENTID_TOKEN` and `IBM_AGENTID_SERVER` bypass.
+* The `IBM_AGENTID_TOKEN` and `IBM_AGENTID_SERVER` variables. The command layer reads them (see `internal/resource/spec.md` §7.1).
 * Other `@`-style prefixes, `@@` escapes, `~` expansion, and copying file contents into `~/.ibm-agentid`.
