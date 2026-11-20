@@ -1,0 +1,242 @@
+{
+  "auth.auth_type_unknown": {
+    "description": "Error when a context's oauth.auth_type is not one of none, client_secret_post or private_key_jwt. AuthType is the value found.",
+    "other": "unknown auth_type \"{{.AuthType}}\": use none, client_secret_post or private_key_jwt"
+  },
+  "auth.ca_no_certs": {
+    "description": "Error when the CA bundle in tls.ca_cert contains no PEM certificates. Where is the file path, or tls.ca_cert when the bundle was given inline.",
+    "other": "no certificates found in {{.Where}}"
+  },
+  "auth.cache_write_failed": {
+    "description": "Error when a token was obtained but could not be saved to the token cache. Error is the underlying system error.",
+    "other": "signed in, but could not save the token: {{.Error}}"
+  },
+  "auth.callback_issuer_mismatch": {
+    "description": "Error when the sign-in redirect names a different issuer than the one configured, which means the response did not come from the expected authorization server. Issuer is the configured issuer.",
+    "other": "the sign-in response came from a different authorization server than {{.Issuer}}; sign-in stopped"
+  },
+  "auth.client_auth_required": {
+    "description": "Error when a grant that needs client authentication is configured with auth_type none. Grant is the grant type.",
+    "other": "the {{.Grant}} grant needs auth_type client_secret_post or private_key_jwt"
+  },
+  "auth.discovery_failed": {
+    "description": "Error when the authorization server's metadata cannot be fetched. Issuer is the configured issuer, Error is the underlying error.",
+    "other": "could not read the server metadata for {{.Issuer}}: {{.Error}}"
+  },
+  "auth.discovery_issuer_mismatch": {
+    "description": "Error when the issuer reported in the server metadata differs from the configured issuer. Configured and Reported are the two values.",
+    "other": "the server reports issuer {{.Reported}}, but the context is configured with {{.Configured}}"
+  },
+  "auth.discovery_missing_endpoint": {
+    "description": "Error when the server metadata lacks an endpoint that the grant needs. Endpoint is the metadata field name.",
+    "other": "the server metadata has no {{.Endpoint}}"
+  },
+  "auth.grant_unsupported": {
+    "description": "Error when a context's oauth.grant_type is not supported. Grant is the value found.",
+    "other": "grant type \"{{.Grant}}\" is not supported: use authorization_code or client_credentials"
+  },
+  "auth.key_missing_member": {
+    "description": "Error when the private key lacks a member the signer needs. Where is the file path, or oauth.private_jwk when the key was given inline. Member is kid or alg.",
+    "other": "the key in {{.Where}} has no \"{{.Member}}\""
+  },
+  "auth.key_not_jwk": {
+    "description": "Error when the private key is not a JSON Web Key. Where is the file path, or oauth.private_jwk when the key was given inline.",
+    "other": "{{.Where}} is not a valid JSON Web Key"
+  },
+  "auth.key_not_private": {
+    "description": "Error when the key is a public key or invalid instead of a private key. Where is the file path, or oauth.private_jwk when the key was given inline.",
+    "other": "{{.Where}} does not contain a valid private key"
+  },
+  "auth.listen_failed": {
+    "description": "Error when the local sign-in listener cannot bind its address, for example because the port is in use. Address is host:port, Error is the underlying system error.",
+    "other": "could not listen on {{.Address}} for the sign-in redirect: {{.Error}}; free the port or set a different oauth.redirect_uri"
+  },
+  "auth.login_required": {
+    "description": "Error when no token can be produced without the user signing in. Name is the context name.",
+    "other": "no valid token for context \"{{.Name}}\"; run 'ibm-agentid login' to sign in"
+  },
+  "auth.login_required_secret": {
+    "description": "Error when no token can be produced and the context uses a client secret that is not available. Name is the context name.",
+    "other": "no valid token for context \"{{.Name}}\"; run 'ibm-agentid login' again, or set IBM_AGENTID_CLIENT_SECRET"
+  },
+  "auth.login_timeout": {
+    "description": "Error when the browser sign-in did not finish in time. Duration is how long the CLI waited.",
+    "other": "sign-in did not finish within {{.Duration}}"
+  },
+  "auth.page_failure_body": {
+    "description": "Body text of the browser page shown when sign-in did not complete.",
+    "other": "Sign-in did not complete. Return to the terminal for details."
+  },
+  "auth.page_failure_title": {
+    "description": "Title of the browser page shown when sign-in did not complete.",
+    "other": "Sign-in failed"
+  },
+  "auth.page_rejected_body": {
+    "description": "Body text of the browser page shown for a request to the local sign-in listener that was not the expected redirect.",
+    "other": "This request was not the expected sign-in redirect."
+  },
+  "auth.page_rejected_title": {
+    "description": "Title of the browser page shown for a request to the local sign-in listener that was not the expected redirect.",
+    "other": "Request not accepted"
+  },
+  "auth.page_success_body": {
+    "description": "Body text of the browser page shown after a successful sign-in.",
+    "other": "You can close this window and return to the terminal."
+  },
+  "auth.page_success_title": {
+    "description": "Title of the browser page shown after a successful sign-in.",
+    "other": "Signed in"
+  },
+  "auth.prompt_opening": {
+    "description": "Terminal message printed before the browser is opened for sign-in. The sign-in URL follows on the next line.",
+    "other": "Opening your browser to sign in. If it does not open, visit this URL:"
+  },
+  "auth.prompt_visit": {
+    "description": "Terminal message printed when the browser is not opened automatically. The sign-in URL follows on the next line.",
+    "other": "To sign in, visit this URL:"
+  },
+  "auth.prompt_waiting": {
+    "description": "Terminal message printed while waiting for the browser sign-in to finish.",
+    "other": "Waiting for sign-in to complete (press Ctrl+C to cancel)..."
+  },
+  "auth.redirect_invalid": {
+    "description": "Error when oauth.redirect_uri is not an http loopback URI (127.0.0.1, [::1] or localhost). URI is the value found.",
+    "other": "invalid redirect_uri \"{{.URI}}\": it must be an http URL on 127.0.0.1, [::1] or localhost"
+  },
+  "auth.secret_missing": {
+    "description": "Error when a client_secret_post context has no client secret to use. Name is the context name.",
+    "other": "context \"{{.Name}}\" needs a client secret: put client_secret in the login input, or set IBM_AGENTID_CLIENT_SECRET and leave it out"
+  },
+  "auth.setting_missing": {
+    "description": "Error when a required context setting is empty. Name is the context name, Setting is the setting path such as oauth.issuer.",
+    "other": "context \"{{.Name}}\" has no {{.Setting}}"
+  },
+  "config.home_dir_unresolved": {
+    "description": "The user's home directory could not be determined, so the CLI cannot locate its state directory (~/.ibm-agentid). Error is the underlying system error.",
+    "other": "could not determine the home directory: {{.Error}}"
+  },
+  "context.exists": {
+    "description": "Error when renaming a context to a name that is already registered. Name is the existing context name.",
+    "other": "context \"{{.Name}}\" already exists"
+  },
+  "context.invalid_name": {
+    "description": "Error when a context name has characters or a length that is not allowed. Name is the rejected name.",
+    "other": "invalid context name \"{{.Name}}\": use letters, digits, '.', '_' or '-', start with a letter or digit, and keep it to 64 characters or fewer"
+  },
+  "context.nil_environment": {
+    "description": "Internal error when a context is saved without any environment settings. Name is the context name.",
+    "other": "context \"{{.Name}}\" has no environment settings"
+  },
+  "context.not_found": {
+    "description": "Error when a named context is not registered in config.yaml. Name is the context name.",
+    "other": "context \"{{.Name}}\" not found"
+  },
+  "data.data_flag": {
+    "description": "Help text of the -d/--data flag, shared by every command that takes data.",
+    "other": "Path to the data file, or - for stdin. YAML or JSON."
+  },
+  "data.output_flag": {
+    "description": "Help text of the -o/--output flag, which sets the format of --template.",
+    "other": "Format of --template: yaml or json."
+  },
+  "data.template_flag": {
+    "description": "Help text of the --template flag, shared by every command that takes data.",
+    "other": "Print a skeleton of the data and exit."
+  },
+  "input.empty": {
+    "description": "Error when the -d data is empty or only whitespace.",
+    "other": "the input is empty"
+  },
+  "input.invalid_data": {
+    "description": "Error when the -d data cannot be decoded: bad syntax or a value of the wrong type. The text avoids quoting the data because it can hold secrets.",
+    "other": "the input is not valid YAML or JSON, or a value has the wrong type (a value that starts with @ must be quoted)"
+  },
+  "input.invalid_server": {
+    "description": "Error when the server property is not an http or https URL with a host, or contains a user name or password.",
+    "other": "\"server\" must be an http or https URL with a host and no user name or password"
+  },
+  "input.required": {
+    "description": "Error when a required property is missing or empty. Property is the dotted property name.",
+    "other": "\"{{.Property}}\" is required"
+  },
+  "input.terminal_stdin": {
+    "description": "Error when -d - is used and standard input is a terminal.",
+    "other": "-d - reads standard input, but it is a terminal; pipe the data in or use a heredoc"
+  },
+  "input.too_large": {
+    "description": "Error when the -d data is larger than the limit. Max is the limit in bytes.",
+    "other": "the input is larger than {{.Max}} bytes"
+  },
+  "input.unknown_format": {
+    "description": "Error when --template is given an output format other than yaml or json. Format is what was supplied.",
+    "other": "unknown template format \"{{.Format}}\"; use yaml or json"
+  },
+  "logging.invalid_setting": {
+    "description": "Warning shown when a logging setting has an unrecognized value and the default is used instead. Setting is the environment variable name, Value is what was supplied, Default is the value used.",
+    "other": "invalid value \"{{.Value}}\" for {{.Setting}}; using the default \"{{.Default}}\""
+  },
+  "logging.open_failed": {
+    "description": "Warning shown when the user asked for logging but the log file cannot be opened. Path is the log file, Error is the underlying system error.",
+    "other": "could not open the log file {{.Path}}: {{.Error}}; continuing without logging"
+  },
+  "login.data_required": {
+    "description": "Error when login is run without -d and without --template.",
+    "other": "login needs the connection data: use -d <file> (or -d - for stdin), or --template to print a skeleton"
+  },
+  "login.inline_secret": {
+    "description": "Warning when a secret is given inline and is saved to config.yaml as written. Property is the dotted property name.",
+    "other": "warning: {{.Property}} is saved to config.yaml as written; use @file to keep it out"
+  },
+  "login.long": {
+    "description": "Long help text of the login command. Property names, flag names and the @ prefix are literal and must not be translated.",
+    "other": "Sign in to an IBM Agent Identity server, save the connection as a named context and cache the token.\n\nThe connection is described by YAML or JSON data, read with -d from a file or from stdin (-). Use --template to print a skeleton.\n\nData properties (* is required):\n  context                   Name to save the context under. The --context flag wins.\n  server *                  Base URL of the server.\n  tls.ca_cert               CA bundle: @file or inline PEM.\n  tls.insecure_skip_verify  Skip TLS verification. For local development only.\n  oauth.issuer *            OIDC issuer URL.\n  oauth.client_id *         OAuth client ID.\n  oauth.grant_type          authorization_code (default) or client_credentials.\n  oauth.auth_type           none (default), private_key_jwt or client_secret_post.\n  oauth.private_jwk         Private JWK for private_key_jwt: @file or inline JSON.\n  oauth.client_secret       Client secret: @file or inline value.\n  oauth.redirect_uri        Fixed loopback redirect URI.\n  oauth.scopes              List of scopes to request.\n\nA value that starts with @ names a file. In YAML, quote it. A relative path is relative to the data file. An inline secret is saved as written, so prefer @file.\n\nIf the sign-in fails, nothing is saved."
+  },
+  "login.no_browser_flag": {
+    "description": "Help text of the login --no-browser flag.",
+    "other": "Print the sign-in URL and do not open a browser."
+  },
+  "login.no_save_flag": {
+    "description": "Help text of the login --no-save flag.",
+    "other": "Sign in without saving the context or the token."
+  },
+  "login.print_token_flag": {
+    "description": "Help text of the login --print-token flag.",
+    "other": "Print the access token on stdout."
+  },
+  "login.short": {
+    "description": "Short help text of the login command.",
+    "other": "Sign in to an IBM Agent Identity server and save the context"
+  },
+  "login.success": {
+    "description": "Printed after a successful login that saved the context. Name is the context name.",
+    "other": "Signed in. The context \"{{.Name}}\" is saved and current."
+  },
+  "login.success_no_save": {
+    "description": "Printed after a successful login with --no-save.",
+    "other": "Signed in. Nothing was saved."
+  },
+  "login.timeout_flag": {
+    "description": "Help text of the login --timeout flag.",
+    "other": "How long to wait for the browser sign-in (default 5m)."
+  },
+  "root.context_flag": {
+    "description": "Help text of the global --context flag.",
+    "other": "Name of the context to use or create."
+  },
+  "root.short": {
+    "description": "Short help text of the root command.",
+    "other": "Command-line client for IBM Agent Identity"
+  },
+  "source.empty_path": {
+    "description": "Error when a value is a file reference with no path, that is, only the @ prefix.",
+    "other": "a file reference needs a path after the @"
+  },
+  "source.not_regular": {
+    "description": "Error when a file reference names something that is not a regular file, such as a directory. Path is the absolute path.",
+    "other": "{{.Path}} is not a regular file"
+  },
+  "source.unreadable": {
+    "description": "Error when a file reference names a file that does not exist or cannot be read. Path is the absolute path, Error is the underlying system error.",
+    "other": "could not use the file {{.Path}}: {{.Error}}"
+  }
+}
