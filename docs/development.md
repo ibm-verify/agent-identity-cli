@@ -1,6 +1,6 @@
 # Development
 
-Working rules and status for contributors and coding agents. User-facing usage belongs in `README.md` and, later, `AGENTS.md`.
+Working rules and status for contributors and coding agents. User-facing usage lives in the per-command docs (`docs/login.md`, `docs/context.md`) and, later, `README.md` and `AGENTS.md`.
 
 ## Status
 
@@ -11,15 +11,35 @@ Working rules and status for contributors and coding agents. User-facing usage b
 | `internal/logging` | Done. File logging, redaction, HTTP round tripper. |
 | `internal/oauth` | Done. Login, token, refresh, client credentials, `private_key_jwt`, revoke. |
 | `internal/input` | Done. The `-d` reader, `login` payload and `--template`. |
-| Command layer | `login` ([`docs/login.md`](login.md)), `context` ([`docs/context.md`](context.md)), `main` and the Makefile are done. `logout` is next, when asked. |
-| `AGENTS.md` | With the command layer. It describes how agents and IDEs use the CLI. |
+| Command layer | `login` ([`docs/login.md`](login.md)), `context` ([`docs/context.md`](context.md)), `main` and the Makefile are done. |
+| `logout` | Next, when asked. Spec: `internal/profile/spec.md` §6. `oauth.Provider.Revoke` and `profile.DeleteToken` / `DeleteAllTokens` already exist. |
+| Not started | `--log-*` flags, the `IBM_AGENTID_TOKEN` / `IBM_AGENTID_SERVER` bypass, `README.md`, `AGENTS.md` (how agents and IDEs use the CLI). |
 
-Scope today is `login` and `context` (`internal/cmd`, `cmd/ibm-agentid`) on top of the libraries under `internal/`. Commands are plain cobra, wired in code: one constructor per command, shared flags in `internal/cmd/data.go`, no registry or executor interface. Help text goes through `i18n`, and `--help` must stand alone because users only have the binary.
+## Layout
+
+* `cmd/ibm-agentid`: `main` only. It sets the language, starts logging, handles Ctrl-C and exits 1 on error.
+* `internal/cmd`: the commands. `root.go` builds the root, `data.go` holds the shared `-d` / `--template` / `-o` flags, and each command has its own file and test.
+* `internal/input`: reads `-d` data, parses the payload, prints templates.
+* `internal/oauth`, `internal/profile`, `internal/i18n`, `internal/logging`: the libraries the commands call.
 
 ## Build
 
 * `make build` writes `bin/ibm-agentid`. `make build-all` and `make build-<os>-<arch>` write `bin/ibm-agentid-<os>-<arch>`.
 * `make check` runs the gate below. `make clean` removes `bin/`.
+
+## Adding a command
+
+Commands are plain cobra, wired in code: no registry, no executor interface.
+
+1. Write the requirement in the spec, or in the command's doc if the spec already covers it. Add `docs/<command>.md` (usage, flags, output, examples) and a row in the table below.
+2. Add `internal/cmd/<command>.go` with one constructor, `newX(opts *options)`, and register it in `NewRoot`. The work goes in ordinary `runX` functions that `RunE` calls.
+3. Use `options.context` for `--context`. A command that takes data calls `dataFlags.add`, so `-d`, `--template` and `-o` behave the same everywhere. Add a `XxxTemplate` function in `internal/input` for its payload.
+4. Output: stdout holds only data (a template, a token, a table). Confirmations, warnings and prompts go to stderr. Return errors and let `main` print them once.
+5. Help text: `Short`, `Long` and flag descriptions go through `i18n`. `Use` and `Example` stay literal. `--help` must stand alone, because users only have the binary.
+6. A destructive command asks `[y/N]` on stderr, reads stdin with `cmd.InOrStdin()`, and takes `--yes`. No input means no.
+7. Never print an inline secret. Mask it, as `context view` does.
+8. Tests go in `internal/cmd/<command>_test.go`. Use `isolate` (it points `XDG_CONFIG_HOME` at a temp directory, so the real state is never touched), `run` and `runWithInput`, and `seed` for saved contexts.
+9. Run the gate. `make check` runs it.
 
 ## Where the requirements live
 
@@ -51,6 +71,7 @@ Scope today is `login` and `context` (`internal/cmd`, `cmd/ibm-agentid`) on top 
 ## Dependencies
 
 * Module: `github.com/ibm-verify/agent-identity-cli`.
+* CLI: `github.com/spf13/cobra`.
 * YAML: `go.yaml.in/yaml/v3`, not `gopkg.in/yaml.v3`.
 * i18n: `github.com/nicksnyder/go-i18n/v2`.
 * OAuth: `github.com/ibm-verify/verify-auth-go` at v0.1.2 or newer. No `replace`.
