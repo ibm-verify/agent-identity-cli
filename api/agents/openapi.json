@@ -1,0 +1,1774 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "description": "REST API to onboard and manage Agent Identities in IBM Agent Identity Server (AIS) following the SCIM 2.0 specification.\n\nAgent Identity is how AIS recognises, authenticates, and governs AI agents operating in your environment. Each AI agent is assigned its own purpose-built, non-human identity construct — enabling least-privilege access, clear accountability, and lifecycle governance.\n\nAIS is an on-premises product and does not use tenants. All agents belong to a single Agent Identity Server instance.",
+        "version": "1.0",
+        "title": "IBM Agent Identity Server - SCIM 2.0 API",
+        "license": {
+            "name": "Proprietary"
+        }
+    },
+    "servers": [
+        {
+            "url": "https://{host}:{port}",
+            "variables": {
+                "host": {
+                    "default": "localhost",
+                    "description": "Hostname or IP address of the Agent Identity Server, for example, ais.example.com"
+                },
+                "port": {
+                    "default": "8436",
+                    "description": "HTTPS port of the Agent Identity Server"
+                }
+            }
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Agent management",
+            "description": "SCIM 2.0 compliant operations for managing Agent Identities."
+        }
+    ],
+    "paths": {
+        "/v1.0/Agents": {
+            "post": {
+                "x-category": "AI Agents",
+                "x-publicAPI": "true",
+                "summary": "Create a new Agent",
+                "description": "Onboards a new agent in Agent Identity Server following the SCIM 2.0 Agent schema.\n\nSchema: urn:ietf:params:scim:schemas:core:ibm:2.0:Agent\n\n**Required scope:** `ibm.iai.manage_agents`\n\n## Mandatory Fields\n\n- **schemas** (array): SCIM schema URIs - REQUIRED\n- **displayName** (string, max 255 chars): Human-readable name for the agent. Must be unique within the Agent Identity Server - REQUIRED\n\n## Optional Fields\n\n- **status** (string): Agent status. Values: ACTIVE, SUSPENDED, UNDER_REVIEW. **Any value provided is silently overridden to `UNDER_REVIEW` on creation.**\n- **description** (string, max 1024 chars): Detailed description of the agent's purpose\n- **externalIds** (array): External system identifiers. Each must be unique within the Agent Identity Server. Max 10 items, each max 128 chars.\n- **owners** (array): Owner user IDs\n- **tags** (array): Custom tags for categorization\n\n## Read-Only Fields\n\n- **oauthClients** (array): OAuth clients are READ-ONLY. Fetched dynamically once Agent Id gets associated with OAuth clients. Cannot be set through POST/PUT.\n\n## Uniqueness Constraints\n\n- **displayName**: Must be unique within the Agent Identity Server\n- **externalIds**: Each externalId must be unique within the Agent Identity Server",
+                "tags": [
+                    "Agent management"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/scim+json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateAgentRequest"
+                            }
+                        }
+                    },
+                    "description": "Agent creation request with SCIM 2.0 compliant schema",
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Agent created successfully",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Agent"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"],
+                                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                                    "displayName": "Production API Service",
+                                    "description": "API service for production workloads",
+                                    "status": "UNDER_REVIEW",
+                                    "externalIds": ["ext-agent-123"],
+                                    "tags": ["production", "api-service"],
+                                    "owners": [
+                                        {
+                                            "value": "user-123",
+                                            "type": "User",
+                                            "display": "John Doe"
+                                        }
+                                    ],
+                                    "oauthClients": [],
+                                    "createdBy": {
+                                        "value": "user-123",
+                                        "display": "John Doe"
+                                    },
+                                    "meta": {
+                                        "resourceType": "Agent",
+                                        "created": "2026-03-24T10:00:00Z",
+                                        "lastModified": "2026-03-24T10:00:00Z",
+                                        "location": "/v1.0/Agents/550e8400-e29b-41d4-a716-446655440000"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid request payload (CSINH1002E) or validation errors (CSINH2100E-CSINH2112E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "400",
+                                    "scimType": "invalidValue",
+                                    "detail": "CSINH2100E The 'displayName' field is required."
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Missing, invalid or expired access token (CSINH2500E)",
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "Bearer challenge, per RFC 6750",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "401",
+                                    "detail": "CSINH2500E Authentication is required to access this resource."
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Token lacks the required scope (CSINH2501E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "403",
+                                    "detail": "CSINH2501E Insufficient permissions to perform this operation."
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Agent with same displayName or externalId already exists (CSINH2002E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "409",
+                                    "scimType": "uniqueness",
+                                    "detail": "CSINH2002E An agent with the displayName 'Production API Service' already exists."
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable - The authorization server could not be reached to validate the token (CSINH4002E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error (CSINH1000E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "500",
+                                    "detail": "CSINH1000E An internal server error occurred."
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "x-category": "AI Agents",
+                "x-publicAPI": "true",
+                "summary": "List all Agents",
+                "description": "Retrieves a list of agents that match the filter criteria. Filtering and sorting are supported. Returns up to 50 agents per response.\n\n**Required scopes** (at least one): `ibm.iai.read_agents`, `ibm.iai.manage_agents`\n\n**Examples**\n- List all agents: `GET /Agents`\n- Filter by name: `GET /Agents?filter=displayName eq \"MyAgent\"`\n- Filter by ID: `GET /Agents?filter=id eq \"550e8400-e29b-41d4-a716-446655440000\"`\n- Filter by external ID: `GET /Agents?filter=externalId eq \"ext-123\"`\n- Sort by name: `GET /Agents?sortBy=displayName&sortOrder=ascending`\n- Combined: `GET /Agents?filter=displayName eq \"MyAgent\"&sortBy=displayName&sortOrder=ascending`",
+                "tags": [
+                    "Agent management"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "filter",
+                        "required": false,
+                        "description": "The filter expression used to search agents. Supported attributes: displayName, id, externalId, status. Supported operator: eq.\n\nFor example, `displayName eq \"MyAgent\"` or `status eq \"ACTIVE\"`.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortBy",
+                        "required": false,
+                        "description": "The attribute used to sort the results. Supported values: displayName, id, meta.lastModified.",
+                        "schema": {
+                            "type": "string",
+                            "enum": ["displayName", "id", "meta.lastModified"]
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sortOrder",
+                        "required": false,
+                        "description": "The sort order when agents are returned. Use with sortBy.",
+                        "schema": {
+                            "type": "string",
+                            "enum": ["ascending", "descending"],
+                            "default": "ascending"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "attributes",
+                        "required": false,
+                        "description": "Comma-separated list of attribute names to include in the response. When specified, only these attributes are included. By default, `id` and `schemas` are always returned. Supported values: status, externalIds, displayName, description, owners, tags, meta.\n\nFor example, `attributes=displayName,status,tags`.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "excludedAttributes",
+                        "required": false,
+                        "description": "Comma-separated list of attribute names to exclude from the response. Cannot be used together with `attributes`. Supported values: status, externalIds, displayName, description, owners, tags, meta.\n\nFor example, `excludedAttributes=tags`.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of agents retrieved successfully",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AgentListResponse"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+                                    "totalResults": 2,
+                                    "Resources": [
+                                        {
+                                            "schemas": ["urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"],
+                                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                                            "displayName": "Production API Service",
+                                            "description": "API service for production workloads",
+                                            "status": "ACTIVE",
+                                            "meta": {
+                                                "resourceType": "Agent",
+                                                "created": "2026-03-24T10:00:00Z",
+                                                "lastModified": "2026-03-24T10:30:00Z",
+                                                "location": "/v1.0/Agents/550e8400-e29b-41d4-a716-446655440000"
+                                            }
+                                        },
+                                        {
+                                            "schemas": ["urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"],
+                                            "id": "660f9511-f3ac-52e5-b827-557766551111",
+                                            "displayName": "Staging Data Pipeline",
+                                            "description": "Data pipeline agent for staging environment",
+                                            "status": "UNDER_REVIEW",
+                                            "meta": {
+                                                "resourceType": "Agent",
+                                                "created": "2026-03-25T08:00:00Z",
+                                                "lastModified": "2026-03-25T08:00:00Z",
+                                                "location": "/v1.0/Agents/660f9511-f3ac-52e5-b827-557766551111"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid search (CSINH1200E-CSINH1202E) or sort (CSINH1203E-CSINH1204E) parameters",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "400",
+                                    "scimType": "invalidFilter",
+                                    "detail": "CSINH1200E The filter expression is not valid."
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Missing, invalid or expired access token (CSINH2500E)",
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "Bearer challenge, per RFC 6750",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "401",
+                                    "detail": "CSINH2500E Authentication is required to access this resource."
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Token lacks the required scope (CSINH2501E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "403",
+                                    "detail": "CSINH2501E Insufficient permissions to perform this operation."
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable - The authorization server could not be reached to validate the token (CSINH4002E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error (CSINH1000E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "500",
+                                    "detail": "CSINH1000E An internal server error occurred."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1.0/Agents/{id}": {
+            "get": {
+                "x-category": "AI Agents",
+                "x-publicAPI": "true",
+                "summary": "Get Agent by ID",
+                "description": "Retrieves a specific agent by its unique identifier.\n\n**Required scopes** (at least one): `ibm.iai.read_agents`, `ibm.iai.manage_agents`\n\nDisplay names for createdBy and owners are fetched and returned if exist in the configured user registry.\n\nOAuth clients are fetched dynamically once Agent Id gets associated with OAuth clients.",
+                "tags": [
+                    "Agent management"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "Unique identifier of the agent (UUID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "attributes",
+                        "required": false,
+                        "description": "Comma-separated list of attribute names to include in the response. When specified, only these attributes are included. By default, `id` and `schemas` are always returned. Supported values: status, externalIds, displayName, description, owners, oauthClients, tags, createdBy, meta.\n\nFor example, `attributes=displayName,owners`.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "excludedAttributes",
+                        "required": false,
+                        "description": "Comma-separated list of attribute names to exclude from the response. Cannot be used together with `attributes`. Supported values: status, externalIds, displayName, description, owners, oauthClients, tags, createdBy, meta.\n\nFor example, `excludedAttributes=oauthClients`.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Agent retrieved successfully",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Agent"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"],
+                                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                                    "displayName": "Production API Service",
+                                    "description": "API service for production workloads",
+                                    "status": "ACTIVE",
+                                    "externalIds": ["ext-agent-123"],
+                                    "tags": ["production", "api-service"],
+                                    "owners": [
+                                        {
+                                            "value": "user-123",
+                                            "type": "User",
+                                            "display": "John Doe"
+                                        }
+                                    ],
+                                    "oauthClients": [
+                                        {
+                                            "issuer": "https://ais.example.com:8436/oauth2",
+                                            "clientId": "00d6aa8e-049c-4661-94ab-6905b37b8a69",
+                                            "display": "My OAuth Client",
+                                            "clientUri": "https://app.example.com",
+                                            "purposes": ["agent_id"]
+                                        }
+                                    ],
+                                    "createdBy": {
+                                        "value": "user-123",
+                                        "display": "John Doe"
+                                    },
+                                    "meta": {
+                                        "resourceType": "Agent",
+                                        "created": "2026-03-24T10:00:00Z",
+                                        "lastModified": "2026-03-24T10:30:00Z",
+                                        "location": "/v1.0/Agents/550e8400-e29b-41d4-a716-446655440000"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid attributes parameter (CSINH1200E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "400",
+                                    "scimType": "invalidValue",
+                                    "detail": "CSINH1200E The 'attributes' parameter contains an unsupported attribute name."
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Missing, invalid or expired access token (CSINH2500E)",
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "Bearer challenge, per RFC 6750",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "401",
+                                    "detail": "CSINH2500E Authentication is required to access this resource."
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Token lacks the required scope (CSINH2501E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "403",
+                                    "detail": "CSINH2501E Insufficient permissions to perform this operation."
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Agent not found (CSINH2001E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "404",
+                                    "detail": "CSINH2001E Agent with id '550e8400-e29b-41d4-a716-446655440000' was not found."
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable - The authorization server could not be reached to validate the token (CSINH4002E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error (CSINH1000E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "500",
+                                    "detail": "CSINH1000E An internal server error occurred."
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "x-category": "AI Agents",
+                "x-publicAPI": "true",
+                "summary": "Replace an Agent",
+                "description": "Fully replaces an agent (SCIM 2.0 PUT). Immutable fields (`id`, `meta`) are ignored.\n\n**Required scope:** `ibm.iai.manage_agents`",
+                "tags": [
+                    "Agent management"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "Unique identifier of the agent (UUID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/scim+json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateAgentRequest"
+                            }
+                        }
+                    },
+                    "description": "Complete agent data for replacement",
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Agent replaced successfully",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Agent"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"],
+                                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                                    "displayName": "Production API Service",
+                                    "description": "Updated description for production workloads",
+                                    "status": "ACTIVE",
+                                    "externalIds": ["ext-agent-123"],
+                                    "tags": ["production", "api-service"],
+                                    "owners": [
+                                        {
+                                            "value": "user-123",
+                                            "type": "User",
+                                            "display": "John Doe"
+                                        }
+                                    ],
+                                    "oauthClients": [],
+                                    "createdBy": {
+                                        "value": "user-123",
+                                        "display": "John Doe"
+                                    },
+                                    "meta": {
+                                        "resourceType": "Agent",
+                                        "created": "2026-03-24T10:00:00Z",
+                                        "lastModified": "2026-03-24T11:00:00Z",
+                                        "location": "/v1.0/Agents/550e8400-e29b-41d4-a716-446655440000"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid request payload (CSINH1002E), validation errors (CSINH2100E-CSINH2112E), or immutable field modification (CSINH2111E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "400",
+                                    "scimType": "mutability",
+                                    "detail": "CSINH2111E The field 'id' is immutable and cannot be modified."
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Missing, invalid or expired access token (CSINH2500E)",
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "Bearer challenge, per RFC 6750",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "401",
+                                    "detail": "CSINH2500E Authentication is required to access this resource."
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Token lacks the required scope (CSINH2501E), unauthorized status change (CSINH2506E), or unauthorized field change (CSINH2507E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "403",
+                                    "detail": "CSINH2506E The 'writeAgents' entitlement does not permit status changes."
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Agent not found (CSINH2001E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "404",
+                                    "detail": "CSINH2001E Agent with id '550e8400-e29b-41d4-a716-446655440000' was not found."
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Agent with same displayName or externalId already exists (CSINH2002E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "409",
+                                    "scimType": "uniqueness",
+                                    "detail": "CSINH2002E An agent with the displayName 'Production API Service' already exists."
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable - The authorization server could not be reached to validate the token (CSINH4002E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error (CSINH1000E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "500",
+                                    "detail": "CSINH1000E An internal server error occurred."
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "x-category": "AI Agents",
+                "x-publicAPI": "true",
+                "summary": "Delete an Agent",
+                "description": "Permanently deletes an agent from Agent Identity Server.\n\n**Required scope:** `ibm.iai.manage_agents`",
+                "tags": [
+                    "Agent management"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "Unique identifier of the agent (UUID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Agent deleted successfully - No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Missing, invalid or expired access token (CSINH2500E)",
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "Bearer challenge, per RFC 6750",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "401",
+                                    "detail": "CSINH2500E Authentication is required to access this resource."
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Token lacks the required scope (CSINH2501E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "403",
+                                    "detail": "CSINH2501E Insufficient permissions to perform this operation."
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Agent not found (CSINH2001E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "404",
+                                    "detail": "CSINH2001E Agent with id '550e8400-e29b-41d4-a716-446655440000' was not found."
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Agent has attached OAuth clients and cannot be deleted (CSINH2401E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "409",
+                                    "detail": "CSINH2401E Agent has dependent resources (oauthClients) and cannot be deleted."
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable - The authorization server could not be reached to validate the token (CSINH4002E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error (CSINH1000E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "500",
+                                    "detail": "CSINH1000E An internal server error occurred."
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "x-category": "AI Agents",
+                "x-publicAPI": "true",
+                "summary": "Partially update an Agent",
+                "description": "Partially updates an agent using the SCIM 2.0 PATCH operation. Only the fields specified in the operations array are modified; all other fields remain unchanged.\n\n**Required scope:** `ibm.iai.manage_agents`\n\n## Supported Paths\n\n- `displayName`, `description`, `status`, `tags`, `externalIds`, `owners`\n\n**Note:** `displayName` is mandatory and cannot be removed.\n\n## Examples\n\n```json\n{\n  \"schemas\": [\"urn:ietf:params:scim:api:messages:2.0:PatchOp\"],\n  \"Operations\": [\n    { \"op\": \"replace\", \"path\": \"status\", \"value\": \"ACTIVE\" },\n    { \"op\": \"add\", \"path\": \"tags\", \"value\": [\"production\"] },\n    { \"op\": \"remove\", \"path\": \"description\" }\n  ]\n}\n```",
+                "tags": [
+                    "Agent management"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "description": "Unique identifier of the agent (UUID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/scim+json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchRequest"
+                            }
+                        }
+                    },
+                    "description": "SCIM 2.0 PATCH request body containing one or more operations",
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "Agent patched successfully - No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid request payload (CSINH1002E), unknown operation path (CSINH2113E), or validation errors",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "400",
+                                    "scimType": "invalidPath",
+                                    "detail": "CSINH2113E The path 'unknownField' is not a supported PATCH target."
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Missing, invalid or expired access token (CSINH2500E)",
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "Bearer challenge, per RFC 6750",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "401",
+                                    "detail": "CSINH2500E Authentication is required to access this resource."
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Token lacks the required scope (CSINH2501E), unauthorized status change (CSINH2506E), or unauthorized field change (CSINH2507E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "403",
+                                    "detail": "CSINH2506E The 'writeAgents' entitlement does not permit status changes."
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Agent not found (CSINH2001E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "404",
+                                    "detail": "CSINH2001E Agent with id '550e8400-e29b-41d4-a716-446655440000' was not found."
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Agent with same displayName or externalId already exists (CSINH2002E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "409",
+                                    "scimType": "uniqueness",
+                                    "detail": "CSINH2002E An agent with the displayName 'Production API Service' already exists."
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable - The authorization server could not be reached to validate the token (CSINH4002E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error (CSINH1000E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "500",
+                                    "detail": "CSINH1000E An internal server error occurred."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1.0/Agents/count": {
+            "get": {
+                "x-category": "AI Agents",
+                "x-publicAPI": "true",
+                "summary": "Count Agents",
+                "description": "Returns the total number of agents, optionally filtered by a SCIM `filter` expression.\n\n**Required scopes** (at least one): `ibm.iai.read_agents`, `ibm.iai.manage_agents`\n\n**Examples**\n- Count all agents: `GET /Agents/count`\n- Count by status: `GET /Agents/count?filter=status eq \"ACTIVE\"`",
+                "tags": [
+                    "Agent management"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "filter",
+                        "required": false,
+                        "description": "SCIM filter expression to restrict the count. Only `status` attribute is supported with operator `eq`.\n\nFor example, `status eq \"ACTIVE\"`.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Agent count retrieved successfully",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CountResponse"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:CountResponse"],
+                                    "resourceType": "Agent",
+                                    "totalResults": 42,
+                                    "filter": "status eq \"ACTIVE\""
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Unsupported query parameter or invalid filter expression",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "400",
+                                    "scimType": "invalidFilter",
+                                    "detail": "CSINH1200E The filter expression is not valid."
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Missing, invalid or expired access token (CSINH2500E)",
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "Bearer challenge, per RFC 6750",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "401",
+                                    "detail": "CSINH2500E Authentication is required to access this resource."
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Token lacks the required scope (CSINH2501E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "403",
+                                    "detail": "CSINH2501E Insufficient permissions to perform this operation."
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable - The authorization server could not be reached to validate the token (CSINH4002E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error (CSINH1000E)",
+                        "content": {
+                            "application/scim+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SCIMError"
+                                },
+                                "example": {
+                                    "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
+                                    "status": "500",
+                                    "detail": "CSINH1000E An internal server error occurred."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "OAuth 2.0 access token issued by Agent Identity Server, sent as `Authorization: Bearer <token>`. Access is controlled by token scopes:\n\n| Path | Method | Accepted scopes |\n|---|---|---|\n| `/v1.0/Agents/*` | GET | `ibm.iai.read_agents` or `ibm.iai.manage_agents` |\n| `/v1.0/Agents/*` | all other methods | `ibm.iai.manage_agents` |"
+            }
+        },
+        "schemas": {
+            "Agent": {
+                "type": "object",
+                "required": [
+                    "schemas",
+                    "id",
+                    "displayName"
+                ],
+                "properties": {
+                    "schemas": {
+                        "type": "array",
+                        "description": "SCIM schema URIs",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"
+                        ]
+                    },
+                    "id": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "Unique identifier (UUID). Read-only, assigned by the server on creation.",
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                    },
+                    "externalIds": {
+                        "type": "array",
+                        "description": "External identifiers from source systems. Each externalId must be unique within the Agent Identity Server (max 10 items, each max 128 chars)",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 128
+                        },
+                        "maxItems": 10,
+                        "example": [
+                            "ext-agent-123",
+                            "legacy-id-456"
+                        ]
+                    },
+                    "meta": {
+                        "readOnly": true,
+                        "allOf": [{"$ref": "#/components/schemas/Meta"}],
+                        "description": "SCIM metadata. Read-only, managed by the server."
+                    },
+                    "displayName": {
+                        "type": "string",
+                        "description": "Human-readable name for the agent. Must be unique within the Agent Identity Server. Max 255 characters. The following characters are not permitted: control characters (U+0000–U+001F, U+007F), `;`, `|`, backtick, `$`, `\\`, `<`, `>`.",
+                        "maxLength": 255,
+                        "example": "Production API Service"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Detailed description of the agent's purpose. Max 1024 characters. The following characters are not permitted: control characters (U+0000–U+001F, U+007F), `;`, `|`, backtick, `$`, `\\`, `<`, `>`.",
+                        "maxLength": 1024,
+                        "example": "API service for production workloads"
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Current status of the agent. Default: UNDER_REVIEW",
+                        "enum": [
+                            "ACTIVE",
+                            "SUSPENDED",
+                            "UNDER_REVIEW"
+                        ],
+                        "example": "UNDER_REVIEW"
+                    },
+                    "createdBy": {
+                        "readOnly": true,
+                        "allOf": [{"$ref": "#/components/schemas/CreatedBy"}],
+                        "description": "Identity that created the agent. Read-only, set by the server on creation."
+                    },
+                    "owners": {
+                        "type": "array",
+                        "description": "Owners of the agent. Owners are validated against the user registry configured for Agent Identity Server; if none is configured, owners are not validated. Max 5 owners.",
+                        "maxItems": 5,
+                        "items": {
+                            "$ref": "#/components/schemas/Owner"
+                        }
+                    },
+                    "oauthClients": {
+                        "type": "array",
+                        "description": "OAuth clients associated with the agent (READ-ONLY: Fetched dynamically from the Agent Identity Server OAuth provider, cannot be set through POST/PUT)",
+                        "readOnly": true,
+                        "items": {
+                            "$ref": "#/components/schemas/OAuthClient"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "description": "Tags for categorization and search. Max 10 tags.",
+                        "maxItems": 10,
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "production",
+                            "api-service"
+                        ]
+                    }
+                }
+            },
+            "CreateAgentRequest": {
+                "type": "object",
+                "description": "Agent creation request schema. Both 'schemas' and 'displayName' are required.",
+                "required": [
+                    "schemas",
+                    "displayName"
+                ],
+                "properties": {
+                    "schemas": {
+                        "type": "array",
+                        "description": "**REQUIRED** - SCIM schema URIs",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"
+                        ]
+                    },
+                    "displayName": {
+                        "type": "string",
+                        "description": "**REQUIRED** - Human-readable name for the agent. Must be unique within the Agent Identity Server. Max 255 characters.",
+                        "maxLength": 255,
+                        "example": "Production API Service"
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Agent status (optional). Always set to `UNDER_REVIEW` on creation — any value provided is silently overridden.",
+                        "enum": [
+                            "ACTIVE",
+                            "SUSPENDED",
+                            "UNDER_REVIEW"
+                        ],
+                        "example": "UNDER_REVIEW"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Detailed description of the agent's purpose (optional). Max 1024 characters.",
+                        "maxLength": 1024,
+                        "example": "API service for production workloads"
+                    },
+                    "externalIds": {
+                        "type": "array",
+                        "description": "External identifiers from source systems (optional). Each externalId must be unique within the Agent Identity Server. Max 10 items, each max 128 chars.",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 128
+                        },
+                        "maxItems": 10,
+                        "example": [
+                            "ext-agent-123",
+                            "legacy-id-456"
+                        ]
+                    },
+                    "owners": {
+                        "type": "array",
+                        "description": "Owner user IDs (optional).",
+                        "items": {
+                            "$ref": "#/components/schemas/Owner"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "description": "Custom tags for categorization (optional).",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "production",
+                            "api-service"
+                        ]
+                    }
+                }
+            },
+            "UpdateAgentRequest": {
+                "type": "object",
+                "description": "Agent update request schema for PUT operations. Both 'schemas' and 'displayName' are required.",
+                "required": [
+                    "schemas",
+                    "displayName"
+                ],
+                "properties": {
+                    "schemas": {
+                        "type": "array",
+                        "description": "**REQUIRED** - SCIM schema URIs",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"
+                        ]
+                    },
+                    "displayName": {
+                        "type": "string",
+                        "description": "**REQUIRED** - Human-readable name for the agent. Must be unique within the Agent Identity Server. Max 255 characters.",
+                        "maxLength": 255,
+                        "example": "Production API Service"
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Agent status. Optional in PUT — if not provided, defaults to `UNDER_REVIEW`.",
+                        "enum": [
+                            "ACTIVE",
+                            "SUSPENDED",
+                            "UNDER_REVIEW"
+                        ],
+                        "example": "ACTIVE"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Detailed description of the agent's purpose (optional). Max 1024 characters.",
+                        "maxLength": 1024,
+                        "example": "API service for production workloads"
+                    },
+                    "externalIds": {
+                        "type": "array",
+                        "description": "External identifiers from source systems (optional). Each externalId must be unique within the Agent Identity Server. Max 10 items, each max 128 chars.",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 128
+                        },
+                        "maxItems": 10,
+                        "example": [
+                            "ext-agent-123",
+                            "legacy-id-456"
+                        ]
+                    },
+                    "owners": {
+                        "type": "array",
+                        "description": "Owner user IDs (optional).",
+                        "items": {
+                            "$ref": "#/components/schemas/Owner"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "description": "Custom tags for categorization (optional).",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "production",
+                            "api-service"
+                        ]
+                    }
+                }
+            },
+            "Meta": {
+                "type": "object",
+                "description": "SCIM metadata about the resource",
+                "properties": {
+                    "resourceType": {
+                        "type": "string",
+                        "description": "Type of SCIM resource",
+                        "example": "Agent"
+                    },
+                    "created": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Creation timestamp",
+                        "example": "2026-03-24T10:00:00Z"
+                    },
+                    "lastModified": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Last modification timestamp",
+                        "example": "2026-03-24T10:30:00Z"
+                    },
+                    "location": {
+                        "type": "string",
+                        "description": "URI of the resource",
+                        "example": "/v1.0/Agents/550e8400-e29b-41d4-a716-446655440000"
+                    }
+                }
+            },
+            "CreatedBy": {
+                "type": "object",
+                "description": "Information about who created the agent",
+                "properties": {
+                    "value": {
+                        "type": "string",
+                        "description": "User ID of the creator",
+                        "example": "user-123"
+                    },
+                    "display": {
+                        "type": "string",
+                        "description": "Display name of the creator. Read-only, auto-populated by the server.",
+                        "example": "John Doe"
+                    }
+                }
+            },
+            "Owner": {
+                "type": "object",
+                "description": "Owner reference. Only users are supported. Validated against the configured user registry when owner validation is enabled.",
+                "properties": {
+                    "value": {
+                        "type": "string",
+                        "description": "Unique identifier of the owner (user ID in the configured user registry)",
+                        "example": "user-123"
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "Type of owner. Only `User` is supported.",
+                        "enum": [
+                            "User"
+                        ],
+                        "example": "User"
+                    },
+                    "display": {
+                        "type": "string",
+                        "description": "Display name of the owner. Read-only, auto-populated by the server.",
+                        "example": "John Doe"
+                    }
+                }
+            },
+            "OAuthClient": {
+                "type": "object",
+                "description": "OAuth client configuration",
+                "properties": {
+                    "issuer": {
+                        "type": "string",
+                        "description": "OAuth issuer URI",
+                        "example": "https://issuer.example.com"
+                    },
+                    "clientId": {
+                        "type": "string",
+                        "description": "OAuth client ID",
+                        "example": "00d6aa8e-049c-4661-94ab-6905b37b8a69"
+                    },
+                    "display": {
+                        "type": "string",
+                        "description": "Client name (auto-populated from OAuth client management)",
+                        "example": "Testing"
+                    },
+                    "clientUri": {
+                        "type": "string",
+                        "description": "URI of the client application",
+                        "example": "https://app.example.com"
+                    },
+                    "purposes": {
+                        "type": "array",
+                        "description": "Purposes for which this client is used",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "agent_id",
+                                "transaction_token",
+                                "on_behalf_of",
+                                "other"
+                            ]
+                        },
+                        "example": [
+                            "agent_id"
+                        ]
+                    }
+                }
+            },
+            "AgentListItem": {
+                "type": "object",
+                "description": "Agent representation returned in LIST responses. By default returns: schemas, id, meta, displayName, description, status. Use `?attributes` to request externalIds, owners, or tags.",
+                "required": [
+                    "schemas",
+                    "id",
+                    "displayName"
+                ],
+                "properties": {
+                    "schemas": {
+                        "type": "array",
+                        "description": "SCIM schema URIs",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"
+                        ]
+                    },
+                    "id": {
+                        "type": "string",
+                        "description": "Unique identifier (UUID)",
+                        "example": "550e8400-e29b-41d4-a716-446655440000"
+                    },
+                    "meta": {
+                        "$ref": "#/components/schemas/Meta"
+                    },
+                    "displayName": {
+                        "type": "string",
+                        "description": "Human-readable name for the agent",
+                        "example": "Production API Service"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Detailed description of the agent's purpose",
+                        "example": "API service for production workloads"
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Current status of the agent",
+                        "enum": [
+                            "ACTIVE",
+                            "SUSPENDED",
+                            "UNDER_REVIEW"
+                        ],
+                        "example": "UNDER_REVIEW"
+                    },
+                    "externalIds": {
+                        "type": "array",
+                        "description": "External identifiers from source systems. Returned when requested through `?attributes=externalIds`.",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 128
+                        },
+                        "example": [
+                            "ext-agent-123"
+                        ]
+                    },
+                    "owners": {
+                        "type": "array",
+                        "description": "Owners of the agent. Returned when requested through `?attributes=owners`.",
+                        "items": {
+                            "$ref": "#/components/schemas/Owner"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "description": "Tags for categorization. Returned when requested through `?attributes=tags`.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "production",
+                            "api-service"
+                        ]
+                    }
+                }
+            },
+            "AgentListResponse": {
+                "type": "object",
+                "description": "SCIM 2.0 ListResponse for agents. Returns up to 50 agents per response. By default includes schemas, id, meta, displayName, description, status per item. Additional fields (externalIds, owners, tags) are included when requested via the `attributes` query parameter.",
+                "properties": {
+                    "schemas": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+                        ]
+                    },
+                    "totalResults": {
+                        "type": "integer",
+                        "description": "Lower-bound count of results. Reflects the number of items returned in this response.",
+                        "example": 2
+                    },
+                    "Resources": {
+                        "type": "array",
+                        "description": "Array of agent resources with minimal fields",
+                        "items": {
+                            "$ref": "#/components/schemas/AgentListItem"
+                        }
+                    }
+                }
+            },
+            "SCIMError": {
+                "type": "object",
+                "description": "SCIM 2.0 error response",
+                "required": [
+                    "schemas",
+                    "status",
+                    "detail"
+                ],
+                "properties": {
+                    "schemas": {
+                        "type": "array",
+                        "description": "SCIM schema URIs for error response",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "urn:ietf:params:scim:api:messages:2.0:Error"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "HTTP status code as string (e.g., '400', '404', '500')"
+                    },
+                    "scimType": {
+                        "type": "string",
+                        "description": "SCIM error type",
+                        "enum": [
+                            "invalidFilter",
+                            "invalidPath",
+                            "invalidSyntax",
+                            "invalidValue",
+                            "invalidVers",
+                            "mutability",
+                            "noTarget",
+                            "sensitive",
+                            "tooMany",
+                            "uniqueness",
+                            "invalidRequest"
+                        ]
+                    },
+                    "detail": {
+                        "type": "string",
+                        "description": "Human-readable error message in format: '<errorID> <detail>'"
+                    }
+                }
+            },
+            "CountResponse": {
+                "type": "object",
+                "description": "SCIM 2.0 count response. Returned by GET /Agents/count. `totalResults` holds the exact count of agents, optionally filtered.",
+                "required": [
+                    "schemas",
+                    "resourceType",
+                    "totalResults"
+                ],
+                "properties": {
+                    "schemas": {
+                        "type": "array",
+                        "description": "SCIM schema URIs",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "urn:ietf:params:scim:api:messages:2.0:CountResponse"
+                        ]
+                    },
+                    "resourceType": {
+                        "type": "string",
+                        "description": "SCIM resource type being counted",
+                        "example": "Agent"
+                    },
+                    "totalResults": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Total number of agents matching the filter (or all agents if no filter was provided)",
+                        "example": 42
+                    },
+                    "filter": {
+                        "type": "string",
+                        "description": "The SCIM filter expression that was applied. Omitted when no filter was provided.",
+                        "example": "status eq \"ACTIVE\""
+                    }
+                }
+            },
+            "PatchRequest": {
+                "type": "object",
+                "description": "SCIM 2.0 PATCH request. Contains one or more operations to apply to an agent.",
+                "required": [
+                    "schemas",
+                    "Operations"
+                ],
+                "properties": {
+                    "schemas": {
+                        "type": "array",
+                        "description": "SCIM schema URIs — must include `urn:ietf:params:scim:api:messages:2.0:PatchOp`",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+                        ]
+                    },
+                    "Operations": {
+                        "type": "array",
+                        "description": "Array of patch operations to apply",
+                        "minItems": 1,
+                        "items": {
+                            "$ref": "#/components/schemas/PatchOperation"
+                        }
+                    }
+                }
+            },
+            "PatchOperation": {
+                "type": "object",
+                "description": "A single SCIM 2.0 PATCH operation",
+                "required": [
+                    "op",
+                    "path"
+                ],
+                "properties": {
+                    "op": {
+                        "type": "string",
+                        "description": "The PATCH operation type",
+                        "enum": [
+                            "add",
+                            "remove",
+                            "replace"
+                        ],
+                        "example": "replace"
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "The attribute to target. Required for all operations.",
+                        "enum": [
+                            "displayName",
+                            "description",
+                            "status",
+                            "tags",
+                            "externalIds",
+                            "owners"
+                        ],
+                        "example": "status"
+                    },
+                    "value": {
+                        "description": "The value to apply for `add` and `replace` operations. Not used for `remove`. Type depends on the targeted `path`.",
+                        "oneOf": [
+                            {
+                                "title": "String value",
+                                "description": "Used for `displayName` and `description`.",
+                                "type": "string",
+                                "example": "My Agent"
+                            },
+                            {
+                                "title": "Status value",
+                                "description": "Used for `status`.",
+                                "type": "string",
+                                "enum": [
+                                    "ACTIVE",
+                                    "SUSPENDED"
+                                ],
+                                "example": "ACTIVE"
+                            },
+                            {
+                                "title": "String array",
+                                "description": "Used for `tags` and `externalIds`.",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": ["production", "api-service"]
+                            },
+                            {
+                                "title": "Owner array",
+                                "description": "Used for `owners`.",
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/Owner"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

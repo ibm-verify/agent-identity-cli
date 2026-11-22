@@ -22,6 +22,11 @@ build-%:
 		go build -mod=readonly -ldflags "$(LDFLAGS)" \
 		-o bin/$(BIN)-$*$(if $(findstring windows,$*),.exe) $(PKG)
 
+# Regenerate the OpenAPI clients under internal/resource/ (see api/generate.go).
+.PHONY: generate
+generate:
+	go generate ./api/...
+
 .PHONY: fmt
 fmt:
 	gofmt -l -w .
