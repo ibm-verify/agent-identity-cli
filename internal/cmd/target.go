@@ -13,13 +13,14 @@ import (
 	"github.com/ibm-verify/agent-identity-cli/internal/input"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/agents"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/clients"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/foo"
 )
 
 // resources is every resource the verbs offer, in the order shown in help.
 // Add a resource here.
 func resources() []*resource.Resource {
-	return []*resource.Resource{foo.Resource(), agents.Resource()}
+	return []*resource.Resource{foo.Resource(), agents.Resource(), clients.Resource()}
 }
 
 // target is the object a command acts on: an ID argument or --name.
