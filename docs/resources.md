@@ -9,6 +9,7 @@ Each resource has a plural name, such as `agents`, and a singular alias, such as
 | `agents` | An agent registered with the Agent Identity server. | get, create, replace, patch, delete |
 | `clients` | An OAuth client registered with the Agent Identity server. | get, create, replace, delete |
 | `server-connections` | A reusable outbound connection (HTTP or LDAP) registered with the Agent Identity server. | get, create, replace, delete |
+| `oauth-providers` | An OAuth 2.0 / OIDC provider definition (issuer, keystores and token settings) registered with the Agent Identity server. | get, create, replace, delete |
 
 ## Agent
 
@@ -57,5 +58,22 @@ The API has no partial update, so `patch` is not offered for server connections.
 | `created_at`, `updated_at` | Assigned by the server. Read-only. They are accepted in input, such as the output of `get`, and ignored. |
 
 `get server-connections` accepts `--search`, `--limit` and `--page` (from 1). `--search` matches the `name` exactly. When it is given, every page is searched, so `--limit` and `--page` do not apply. Run `create server-connection --template` for the full template with comments.
+
+## OAuth Provider
+
+The API has no partial update, so `patch` is not offered for OAuth providers. Use `replace`, which sets the whole definition.
+
+| Property | Notes |
+| :--- | :--- |
+| `definition_name` | Unique name of the provider. Identifier, immutable. Required. |
+| `issuer` | Trusted issuer URL of the provider. Required. |
+| `jwks_sig_keystore` | Keystore identifier holding the JWKS signing keys/certificates. |
+| `jwks_enc_keystore` | Keystore identifier holding the JWKS encryption keys/certificates. |
+| `token_settings` | Token settings: `signing_algorithm`, `signing_key_store`, `signing_key_label`, `access_token_lifetime_seconds`, `refresh_token_lifetime_seconds`, `grant_types`, mapping rule and access policy IDs. |
+| `dcr_settings` | Dynamic client registration settings. |
+| `version`, `created_at`, `updated_at` | Assigned by the server. Read-only. They are accepted in input, such as the output of `get`, and ignored. |
+
+`get oauth-providers` accepts `--search`, `--limit` and `--page` (from 1). `--search` matches the `definition_name` exactly. When it is given, every page is searched, so `--limit` and `--page` do not apply. Run `create oauth-provider --template` for the full template with comments.
+
 
 Adding a resource is described in [`internal/resource/spec.md`](../internal/resource/spec.md) §10.
