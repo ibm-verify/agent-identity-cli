@@ -33,7 +33,7 @@ The API has no partial update, so `patch` is not offered for clients. Use `repla
 | `client_id` | Assigned by the server. Read-only. |
 | `client_name` | Name of the client, shown to the end user. |
 | `enabled` | Whether the client is enabled. |
-| `grant_types` | Grant types the client may use, such as `authorization_code`, `client_credentials`, `refresh_token` or `urn:ietf:params:oauth:grant-type:token-exchange`. |
+| `grant_types` | Grant types the client may use, such as `urn:ietf:params:oauth:grant-type:token-exchange`,  `urn:openid:params:grant-type:ciba`,  `client_credentials` `refresh_token` etc |
 | `response_types` | Response types the client may use, such as `code`, `token` or `id_token`. |
 | `redirect_uris` | URIs the server may send the user back to. |
 | `token_endpoint_auth_method` | How the client authenticates at the token endpoint, such as `client_secret_basic` or `private_key_jwt`. |

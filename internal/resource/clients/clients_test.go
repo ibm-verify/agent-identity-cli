@@ -84,10 +84,21 @@ func TestTemplateDecodesInBothFormats(t *testing.T) {
 		t.Errorf("yaml and json differ:\n%s\n%s", a, b)
 	}
 	c := got[0]
-	if c.ClientName == nil || *c.ClientName == "" || c.Enabled == nil || c.GrantTypes == nil || len(*c.GrantTypes) == 0 ||
-		c.ResponseTypes == nil || len(*c.ResponseTypes) == 0 || len(c.RedirectUris) == 0 ||
+	if c.ClientName == nil || *c.ClientName == "" || c.Enabled == nil || c.GrantTypes == nil || len(*c.GrantTypes) != 2 ||
 		c.TokenEndpointAuthMethod == nil || c.Scope == nil || c.Tags == nil || len(*c.Tags) == 0 {
 		t.Errorf("the template should show every kind of property: %+v", c)
+	}
+	for _, want := range []string{"urn:ietf:params:oauth:grant-type:token-exchange", "urn:openid:params:grant-type:ciba"} {
+		found := false
+		for _, gt := range *c.GrantTypes {
+			if string(gt) == want {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("template missing grant type %q: %+v", want, *c.GrantTypes)
+		}
 	}
 	b, err := r.Template("yaml")
 	if err != nil {

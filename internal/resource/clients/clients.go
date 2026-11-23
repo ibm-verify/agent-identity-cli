@@ -9,19 +9,11 @@ const template = `# Name of the client, shown to the end user.
 client_name: My Application
 # Whether the client is enabled.
 enabled: true
-# Grant types the client may use: authorization_code, client_credentials,
-# implicit, password, refresh_token, urn:ietf:params:oauth:grant-type:token-exchange
+# Grant types the client may use: urn:ietf:params:oauth:grant-type:token-exchange
 # or urn:openid:params:grant-type:ciba.
 grant_types:
-  - authorization_code
-  - refresh_token
   - urn:ietf:params:oauth:grant-type:token-exchange
-# Response types the client may use, such as code, token or id_token.
-response_types:
-  - code
-# Redirect URIs the server may send the user back to. Required.
-redirect_uris:
-  - https://app.example.com/callback
+  - urn:openid:params:grant-type:ciba
 # How the client authenticates at the token endpoint: client_secret_basic,
 # client_secret_post, private_key_jwt, tls_client_auth or default.
 token_endpoint_auth_method: client_secret_basic
