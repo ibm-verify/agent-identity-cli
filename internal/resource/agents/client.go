@@ -6,14 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
+	"github.com/ibm-verify/agent-identity-cli/internal/client/registry"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
 
 // authDoer wraps an HttpRequestDoer to inject the Bearer token authorization header.
 type authDoer struct {
-	client HttpRequestDoer
+	client registry.HttpRequestDoer
 	token  string
 }
 
@@ -24,11 +24,11 @@ func (d *authDoer) Do(req *http.Request) (*http.Response, error) {
 }
 
 // newClient constructs a ClientWithResponses configured with authorization.
-func newClient(ctx context.Context, c resource.Conn) (*ClientWithResponses, error) {
+func newClient(ctx context.Context, c resource.Conn) (*registry.ClientWithResponses, error) {
 	if c.Token == "" {
 		return nil, resource.Unauthorized()
 	}
-	var httpClient HttpRequestDoer = c.HTTP
+	var httpClient registry.HttpRequestDoer = c.HTTP
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
@@ -36,11 +36,11 @@ func newClient(ctx context.Context, c resource.Conn) (*ClientWithResponses, erro
 		client: httpClient,
 		token:  c.Token,
 	}
-	return NewClientWithResponses(c.Server, WithHTTPClient(doer))
+	return registry.NewClientWithResponses(c.Server, registry.WithHTTPClient(doer))
 }
 
 // parseError translates standard SCIM error payloads and HTTP status codes to CLI resource errors.
-func parseError(statusCode int, body []byte, scimErr *SCIMError, target string) error {
+func parseError(statusCode int, body []byte, scimErr *registry.SCIMError, target string) error {
 	if statusCode == http.StatusUnauthorized {
 		return resource.Unauthorized()
 	}
@@ -51,7 +51,7 @@ func parseError(statusCode int, body []byte, scimErr *SCIMError, target string) 
 		return errors.New(scimErr.Detail)
 	}
 	if len(body) > 0 {
-		var se SCIMError
+		var se registry.SCIMError
 		if err := json.Unmarshal(body, &se); err == nil && se.Detail != "" {
 			return errors.New(se.Detail)
 		}
@@ -61,7 +61,7 @@ func parseError(statusCode int, body []byte, scimErr *SCIMError, target string) 
 }
 
 // get retrieves a specific agent by ID.
-func get(ctx context.Context, c resource.Conn, id string) (*Agent, error) {
+func get(ctx context.Context, c resource.Conn, id string) (*registry.Agent, error) {
 	client, err := newClient(ctx, c)
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func get(ctx context.Context, c resource.Conn, id string) (*Agent, error) {
 		return nil, err
 	}
 	if resp.HTTPResponse.StatusCode != http.StatusOK {
-		var scimErr *SCIMError
+		var scimErr *registry.SCIMError
 		if resp.ApplicationscimJSON400 != nil {
 			scimErr = resp.ApplicationscimJSON400
 		} else if resp.ApplicationscimJSON401 != nil {
@@ -90,42 +90,20 @@ func get(ctx context.Context, c resource.Conn, id string) (*Agent, error) {
 	return resp.ApplicationscimJSON200, nil
 }
 
-// list filters, sorts, and paginates agents.
-func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Agent, error) {
+// list filters agents.
+func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*registry.Agent, error) {
 	client, err := newClient(ctx, c)
 	if err != nil {
 		return nil, err
 	}
 
 	attrs := "status,externalIds,displayName,description,owners,tags,meta"
-	params := &GetV10AgentsParams{
+	params := &registry.GetV10AgentsParams{
 		Attributes: &attrs,
 	}
 	if q.Search != "" {
 		filter := fmt.Sprintf("displayName eq %q", q.Search)
 		params.Filter = &filter
-	}
-
-	if q.Sort != "" {
-		sortField := q.Sort
-		order := Ascending
-		if strings.HasPrefix(sortField, "-") {
-			sortField = strings.TrimPrefix(sortField, "-")
-			order = Descending
-		}
-		var sortBy GetV10AgentsParamsSortBy
-		switch sortField {
-		case "displayName", "name":
-			sortBy = GetV10AgentsParamsSortByDisplayName
-		case "id":
-			sortBy = GetV10AgentsParamsSortById
-		case "lastModified":
-			sortBy = GetV10AgentsParamsSortByMetaLastModified
-		default:
-			sortBy = GetV10AgentsParamsSortBy(sortField)
-		}
-		params.SortBy = &sortBy
-		params.SortOrder = &order
 	}
 
 	resp, err := client.GetV10AgentsWithResponse(ctx, params)
@@ -134,7 +112,7 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Agent,
 	}
 
 	if resp.HTTPResponse.StatusCode != http.StatusOK {
-		var scimErr *SCIMError
+		var scimErr *registry.SCIMError
 		if resp.ApplicationscimJSON400 != nil {
 			scimErr = resp.ApplicationscimJSON400
 		} else if resp.ApplicationscimJSON401 != nil {
@@ -149,16 +127,16 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Agent,
 		return nil, parseError(resp.HTTPResponse.StatusCode, resp.Body, scimErr, "list")
 	}
 
-	var agents []*Agent
+	var agents []*registry.Agent
 	if resp.ApplicationscimJSON200 != nil && resp.ApplicationscimJSON200.Resources != nil {
 		for _, item := range *resp.ApplicationscimJSON200.Resources {
-			var status *AgentStatus
+			var status *registry.AgentStatus
 			if item.Status != nil {
-				s := AgentStatus(*item.Status)
+				s := registry.AgentStatus(*item.Status)
 				status = &s
 			}
 			idStr := item.Id
-			agents = append(agents, &Agent{
+			agents = append(agents, &registry.Agent{
 				Id:          &idStr,
 				DisplayName: item.DisplayName,
 				Description: item.Description,
@@ -172,29 +150,17 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Agent,
 		}
 	}
 
-	if q.Limit > 0 {
-		start := (max(q.Page, 1) - 1) * q.Limit
-		if start > len(agents) {
-			start = len(agents)
-		}
-		end := start + q.Limit
-		if end > len(agents) {
-			end = len(agents)
-		}
-		agents = agents[start:end]
-	}
-
 	return agents, nil
 }
 
 // create onboards a new agent.
-func create(ctx context.Context, c resource.Conn, v *Agent) (*Agent, error) {
+func create(ctx context.Context, c resource.Conn, v *registry.Agent) (*registry.Agent, error) {
 	client, err := newClient(ctx, c)
 	if err != nil {
 		return nil, err
 	}
 
-	req := CreateAgentRequest{
+	req := registry.CreateAgentRequest{
 		Description: v.Description,
 		DisplayName: v.DisplayName,
 		ExternalIds: v.ExternalIds,
@@ -206,7 +172,7 @@ func create(ctx context.Context, c resource.Conn, v *Agent) (*Agent, error) {
 		req.Schemas = []string{"urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"}
 	}
 	if v.Status != nil {
-		s := CreateAgentRequestStatus(*v.Status)
+		s := registry.CreateAgentRequestStatus(*v.Status)
 		req.Status = &s
 	}
 
@@ -216,7 +182,7 @@ func create(ctx context.Context, c resource.Conn, v *Agent) (*Agent, error) {
 	}
 
 	if resp.HTTPResponse.StatusCode != http.StatusCreated && resp.HTTPResponse.StatusCode != http.StatusOK {
-		var scimErr *SCIMError
+		var scimErr *registry.SCIMError
 		if resp.ApplicationscimJSON400 != nil {
 			scimErr = resp.ApplicationscimJSON400
 		} else if resp.ApplicationscimJSON401 != nil {
@@ -237,13 +203,13 @@ func create(ctx context.Context, c resource.Conn, v *Agent) (*Agent, error) {
 }
 
 // replace fully replaces an agent definition.
-func replace(ctx context.Context, c resource.Conn, id string, v *Agent) (*Agent, error) {
+func replace(ctx context.Context, c resource.Conn, id string, v *registry.Agent) (*registry.Agent, error) {
 	client, err := newClient(ctx, c)
 	if err != nil {
 		return nil, err
 	}
 
-	req := UpdateAgentRequest{
+	req := registry.UpdateAgentRequest{
 		Description: v.Description,
 		DisplayName: v.DisplayName,
 		ExternalIds: v.ExternalIds,
@@ -255,7 +221,7 @@ func replace(ctx context.Context, c resource.Conn, id string, v *Agent) (*Agent,
 		req.Schemas = []string{"urn:ietf:params:scim:schemas:core:ibm:2.0:Agent"}
 	}
 	if v.Status != nil {
-		s := UpdateAgentRequestStatus(*v.Status)
+		s := registry.UpdateAgentRequestStatus(*v.Status)
 		req.Status = &s
 	}
 
@@ -265,7 +231,7 @@ func replace(ctx context.Context, c resource.Conn, id string, v *Agent) (*Agent,
 	}
 
 	if resp.HTTPResponse.StatusCode != http.StatusOK {
-		var scimErr *SCIMError
+		var scimErr *registry.SCIMError
 		if resp.ApplicationscimJSON400 != nil {
 			scimErr = resp.ApplicationscimJSON400
 		} else if resp.ApplicationscimJSON401 != nil {
@@ -288,89 +254,89 @@ func replace(ctx context.Context, c resource.Conn, id string, v *Agent) (*Agent,
 }
 
 // patch partially updates an agent definition.
-func patch(ctx context.Context, c resource.Conn, id string, v *Agent) (*Agent, error) {
+func patch(ctx context.Context, c resource.Conn, id string, v *registry.Agent) (*registry.Agent, error) {
 	client, err := newClient(ctx, c)
 	if err != nil {
 		return nil, err
 	}
 
-	var ops []PatchOperation
+	var ops []registry.PatchOperation
 
 	if v.DisplayName != "" {
-		var val PatchOperation_Value
+		var val registry.PatchOperation_Value
 		if err := val.FromPatchOperationValue0(v.DisplayName); err != nil {
 			return nil, err
 		}
-		ops = append(ops, PatchOperation{
-			Op:    Replace,
-			Path:  PatchOperationPathDisplayName,
+		ops = append(ops, registry.PatchOperation{
+			Op:    registry.Replace,
+			Path:  registry.PatchOperationPathDisplayName,
 			Value: &val,
 		})
 	}
 
 	if v.Description != nil {
 		if *v.Description == "" {
-			ops = append(ops, PatchOperation{
-				Op:   Remove,
-				Path: PatchOperationPathDescription,
+			ops = append(ops, registry.PatchOperation{
+				Op:   registry.Remove,
+				Path: registry.PatchOperationPathDescription,
 			})
 		} else {
-			var val PatchOperation_Value
+			var val registry.PatchOperation_Value
 			if err := val.FromPatchOperationValue0(*v.Description); err != nil {
 				return nil, err
 			}
-			ops = append(ops, PatchOperation{
-				Op:    Replace,
-				Path:  PatchOperationPathDescription,
+			ops = append(ops, registry.PatchOperation{
+				Op:    registry.Replace,
+				Path:  registry.PatchOperationPathDescription,
 				Value: &val,
 			})
 		}
 	}
 
 	if v.Status != nil {
-		var val PatchOperation_Value
-		if err := val.FromPatchOperationValue1(PatchOperationValue1(*v.Status)); err != nil {
+		var val registry.PatchOperation_Value
+		if err := val.FromPatchOperationValue1(registry.PatchOperationValue1(*v.Status)); err != nil {
 			return nil, err
 		}
-		ops = append(ops, PatchOperation{
-			Op:    Replace,
-			Path:  PatchOperationPathStatus,
+		ops = append(ops, registry.PatchOperation{
+			Op:    registry.Replace,
+			Path:  registry.PatchOperationPathStatus,
 			Value: &val,
 		})
 	}
 
 	if v.Tags != nil {
-		var val PatchOperation_Value
+		var val registry.PatchOperation_Value
 		if err := val.FromPatchOperationValue2(*v.Tags); err != nil {
 			return nil, err
 		}
-		ops = append(ops, PatchOperation{
-			Op:    Replace,
-			Path:  PatchOperationPathTags,
+		ops = append(ops, registry.PatchOperation{
+			Op:    registry.Replace,
+			Path:  registry.PatchOperationPathTags,
 			Value: &val,
 		})
 	}
 
 	if v.ExternalIds != nil {
-		var val PatchOperation_Value
+		var val registry.PatchOperation_Value
 		if err := val.FromPatchOperationValue2(*v.ExternalIds); err != nil {
 			return nil, err
 		}
-		ops = append(ops, PatchOperation{
-			Op:    Replace,
-			Path:  PatchOperationPathExternalIds,
+		ops = append(ops, registry.PatchOperation{
+			Op:    registry.Replace,
+			Path:  registry.PatchOperationPathExternalIds,
 			Value: &val,
 		})
 	}
 
 	if v.Owners != nil {
-		var val PatchOperation_Value
+		var val registry.PatchOperation_Value
 		if err := val.FromPatchOperationValue3(*v.Owners); err != nil {
 			return nil, err
 		}
-		ops = append(ops, PatchOperation{
-			Op:    Replace,
-			Path:  PatchOperationPathOwners,
+		ops = append(ops, registry.PatchOperation{
+			Op:    registry.Replace,
+			Path:  registry.PatchOperationPathOwners,
 			Value: &val,
 		})
 	}
@@ -379,7 +345,7 @@ func patch(ctx context.Context, c resource.Conn, id string, v *Agent) (*Agent, e
 		return get(ctx, c, id)
 	}
 
-	req := PatchRequest{
+	req := registry.PatchRequest{
 		Operations: ops,
 		Schemas:    []string{"urn:ietf:params:scim:api:messages:2.0:PatchOp"},
 	}
@@ -390,7 +356,7 @@ func patch(ctx context.Context, c resource.Conn, id string, v *Agent) (*Agent, e
 	}
 
 	if resp.HTTPResponse.StatusCode != http.StatusNoContent && resp.HTTPResponse.StatusCode != http.StatusOK {
-		var scimErr *SCIMError
+		var scimErr *registry.SCIMError
 		if resp.ApplicationscimJSON400 != nil {
 			scimErr = resp.ApplicationscimJSON400
 		} else if resp.ApplicationscimJSON401 != nil {
@@ -425,7 +391,7 @@ func remove(ctx context.Context, c resource.Conn, id string) error {
 	}
 
 	if resp.HTTPResponse.StatusCode != http.StatusNoContent {
-		var scimErr *SCIMError
+		var scimErr *registry.SCIMError
 		if resp.ApplicationscimJSON401 != nil {
 			scimErr = resp.ApplicationscimJSON401
 		} else if resp.ApplicationscimJSON403 != nil {

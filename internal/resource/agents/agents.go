@@ -1,6 +1,7 @@
 package agents
 
 import (
+	"github.com/ibm-verify/agent-identity-cli/internal/client/registry"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
 
@@ -29,29 +30,29 @@ owners:
 // Resource returns the definition of agents, which is all that cmd.NewRoot
 // needs.
 func Resource() *resource.Resource {
-	d := &resource.Def[Agent]{
+	d := &resource.Def[registry.Agent]{
 		Name:     "agents",
 		Singular: "agent",
 		Aliases:  []string{"agent"},
 		Template: template,
-		Columns: []resource.Column[Agent]{
-			{Header: "STATUS", Value: func(a *Agent) string { return resource.Str((*string)(a.Status)) }},
-			{Header: "TAGS", Value: func(a *Agent) string {
+		Columns: []resource.Column[registry.Agent]{
+			{Header: "STATUS", Value: func(a *registry.Agent) string { return resource.Str((*string)(a.Status)) }},
+			{Header: "TAGS", Value: func(a *registry.Agent) string {
 				if a.Tags == nil {
 					return ""
 				}
 				return resource.Join(*a.Tags)
 			}},
-			{Header: "DESCRIPTION", Value: func(a *Agent) string { return resource.Str(a.Description) }},
+			{Header: "DESCRIPTION", Value: func(a *registry.Agent) string { return resource.Str(a.Description) }},
 		},
-		ListFlags: resource.ListSupport{Limit: true, Page: true, Sort: true, Search: true},
+		ListFlags: resource.ListSupport{Search: true},
 
-		ID:     func(a *Agent) string { return resource.Str(a.Id) },
-		NameOf: func(a *Agent) string { return a.DisplayName },
+		ID:     func(a *registry.Agent) string { return resource.Str(a.Id) },
+		NameOf: func(a *registry.Agent) string { return a.DisplayName },
 
 		// The server assigns these, so input that carries them (the output of
 		// get) is accepted and they are dropped.
-		Strip: func(a *Agent) {
+		Strip: func(a *registry.Agent) {
 			a.Id, a.Meta, a.CreatedBy, a.OauthClients = nil, nil, nil, nil
 		},
 

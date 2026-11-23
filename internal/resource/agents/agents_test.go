@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ibm-verify/agent-identity-cli/internal/client/registry"
 	"github.com/ibm-verify/agent-identity-cli/internal/input"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
@@ -42,14 +43,14 @@ func TestTagsMatch(t *testing.T) {
 		}
 	}
 	for _, typ := range []reflect.Type{
-		reflect.TypeFor[Agent](),
-		reflect.TypeFor[AgentListItem](),
-		reflect.TypeFor[AgentListResponse](),
-		reflect.TypeFor[CountResponse](),
-		reflect.TypeFor[CreateAgentRequest](),
-		reflect.TypeFor[UpdateAgentRequest](),
-		reflect.TypeFor[PatchRequest](),
-		reflect.TypeFor[SCIMError](),
+		reflect.TypeFor[registry.Agent](),
+		reflect.TypeFor[registry.AgentListItem](),
+		reflect.TypeFor[registry.AgentListResponse](),
+		reflect.TypeFor[registry.CountResponse](),
+		reflect.TypeFor[registry.CreateAgentRequest](),
+		reflect.TypeFor[registry.UpdateAgentRequest](),
+		reflect.TypeFor[registry.PatchRequest](),
+		reflect.TypeFor[registry.SCIMError](),
 	} {
 		check(typ)
 	}
@@ -60,13 +61,13 @@ func TestTagsMatch(t *testing.T) {
 func TestTemplateDecodesInBothFormats(t *testing.T) {
 	r := Resource()
 
-	var got []*Agent
+	var got []*registry.Agent
 	for _, format := range []string{"yaml", "json"} {
 		b, err := r.Template(format)
 		if err != nil {
 			t.Fatal(err)
 		}
-		v, err := input.Decode[Agent](&input.Data{Bytes: b})
+		v, err := input.Decode[registry.Agent](&input.Data{Bytes: b})
 		if err != nil {
 			t.Fatalf("%s: %v", format, err)
 		}
@@ -228,7 +229,7 @@ func TestGet(t *testing.T) {
 	if obj.ID != "a-1" || obj.Name != "alpha" {
 		t.Errorf("object: %+v", obj)
 	}
-	if got := obj.Value.(*Agent); got.Status == nil || *got.Status != "ACTIVE" {
+	if got := obj.Value.(*registry.Agent); got.Status == nil || *got.Status != "ACTIVE" {
 		t.Errorf("status: %+v", got)
 	}
 	c := (*calls)[0]
@@ -252,7 +253,7 @@ func TestList(t *testing.T) {
 	if l.Len != 3 {
 		t.Fatalf("len: %d", l.Len)
 	}
-	first := l.Items.([]*Agent)[0]
+	first := l.Items.([]*registry.Agent)[0]
 	if first.Id == nil || *first.Id != "a-1" || first.DisplayName != "alpha" || first.Status == nil || *first.Status != "ACTIVE" {
 		t.Errorf("first: %+v", first)
 	}
@@ -266,25 +267,17 @@ func TestList(t *testing.T) {
 			t.Errorf("table lacks %q:\n%s", want, table)
 		}
 	}
-	if c := (*calls)[0]; c.Method != http.MethodGet || c.Path != "/v1.0/Agents" || len(c.Query["filter"]) != 0 || len(c.Query["sortBy"]) != 0 {
+	if c := (*calls)[0]; c.Method != http.MethodGet || c.Path != "/v1.0/Agents" || len(c.Query["filter"]) != 0 {
 		t.Errorf("request: %+v", c)
 	}
 
-	// Search, sort and paging.
-	if _, err := r.List(t.Context(), conn, resource.ListQuery{Search: "alpha", Sort: "-name", Limit: 1, Page: 2}); err != nil {
+	// Search
+	if _, err := r.List(t.Context(), conn, resource.ListQuery{Search: "alpha"}); err != nil {
 		t.Fatal(err)
 	}
 	q := (*calls)[1].Query
-	if q.Get("filter") != `displayName eq "alpha"` || q.Get("sortBy") != "displayName" || q.Get("sortOrder") != "descending" {
+	if q.Get("filter") != `displayName eq "alpha"` {
 		t.Errorf("query: %v", q)
-	}
-
-	page, err := r.List(t.Context(), conn, resource.ListQuery{Limit: 1, Page: 2})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if page.Len != 1 || *page.Items.([]*Agent)[0].Id != "a-2" {
-		t.Errorf("page 2 of 1: %+v", page.Items)
 	}
 }
 
