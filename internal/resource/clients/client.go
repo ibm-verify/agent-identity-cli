@@ -9,12 +9,13 @@ import (
 	"net/url"
 	"path"
 
+	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2mgmt"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
 
 // authDoer wraps an HttpRequestDoer to inject the Bearer token authorization header.
 type authDoer struct {
-	client HttpRequestDoer
+	client oauth2mgmt.HttpRequestDoer
 	token  string
 }
 
@@ -25,19 +26,19 @@ func (d *authDoer) Do(req *http.Request) (*http.Response, error) {
 }
 
 // authorize constructs a ClientWithResponses that sends the connection's bearer token.
-func authorize(ctx context.Context, c resource.Conn) (*ClientWithResponses, error) {
+func authorize(ctx context.Context, c resource.Conn) (*oauth2mgmt.ClientWithResponses, error) {
 	if c.Token == "" {
 		return nil, resource.Unauthorized()
 	}
-	var httpClient HttpRequestDoer = c.HTTP
+	var httpClient oauth2mgmt.HttpRequestDoer = c.HTTP
 	if c.HTTP == nil {
 		httpClient = http.DefaultClient
 	}
-	return NewClientWithResponses(c.Server, WithHTTPClient(&authDoer{client: httpClient, token: c.Token}))
+	return oauth2mgmt.NewClientWithResponses(c.Server, oauth2mgmt.WithHTTPClient(&authDoer{client: httpClient, token: c.Token}))
 }
 
 // firstError returns the first non-nil Error payload.
-func firstError(errs ...*Error) *Error {
+func firstError(errs ...*oauth2mgmt.Error) *oauth2mgmt.Error {
 	for _, e := range errs {
 		if e != nil {
 			return e
@@ -47,7 +48,7 @@ func firstError(errs ...*Error) *Error {
 }
 
 // parseError translates an HTTP status code and OIDC error payload to a CLI resource error.
-func parseError(statusCode int, body []byte, apiErr *Error, target string) error {
+func parseError(statusCode int, body []byte, apiErr *oauth2mgmt.Error, target string) error {
 	switch statusCode {
 	case http.StatusUnauthorized:
 		return resource.Unauthorized()
@@ -55,7 +56,7 @@ func parseError(statusCode int, body []byte, apiErr *Error, target string) error
 		return resource.NotFound("client", target)
 	}
 	if apiErr == nil && len(body) > 0 {
-		var e Error
+		var e oauth2mgmt.Error
 		if err := json.Unmarshal(body, &e); err == nil && e.Error != "" {
 			apiErr = &e
 		}
@@ -74,8 +75,8 @@ func parseError(statusCode int, body []byte, apiErr *Error, target string) error
 
 // toWriteRequest converts a Client to the create/replace request body. The two
 // types share JSON field names, and read-only fields are dropped by the decode.
-func toWriteRequest(v *Client) (ClientWriteRequest, error) {
-	var req ClientWriteRequest
+func toWriteRequest(v *oauth2mgmt.Client) (oauth2mgmt.ClientWriteRequest, error) {
+	var req oauth2mgmt.ClientWriteRequest
 	b, err := json.Marshal(v)
 	if err != nil {
 		return req, err
@@ -85,7 +86,7 @@ func toWriteRequest(v *Client) (ClientWriteRequest, error) {
 }
 
 // get retrieves a client by ID.
-func get(ctx context.Context, c resource.Conn, id string) (*Client, error) {
+func get(ctx context.Context, c resource.Conn, id string) (*oauth2mgmt.Client, error) {
 	client, err := authorize(ctx, c)
 	if err != nil {
 		return nil, err
@@ -100,28 +101,19 @@ func get(ctx context.Context, c resource.Conn, id string) (*Client, error) {
 	return resp.JSON200, nil
 }
 
-// list returns clients. With a search term it walks every page and keeps the
-// clients whose client_name equals the term; otherwise it asks the server for
-// the requested page.
-func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Client, error) {
+// list returns clients. With a search term it keeps only the clients whose
+// client_name equals the term.
+func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*oauth2mgmt.Client, error) {
 	client, err := authorize(ctx, c)
 	if err != nil {
 		return nil, err
 	}
 
-	var clients []*Client
+	var clients []*oauth2mgmt.Client
 	seen := 0
 	for page := 1; ; page++ {
-		params := &ListClientsParams{}
-		if q.Search != "" {
-			params.Page = &page
-		} else {
-			if q.Limit > 0 {
-				params.Limit = &q.Limit
-			}
-			if q.Page > 0 {
-				params.Page = &q.Page
-			}
+		params := &oauth2mgmt.ListClientsParams{
+			Page: &page,
 		}
 
 		resp, err := client.ListClientsWithResponse(ctx, params)
@@ -132,7 +124,7 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Client
 			return nil, parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON400, resp.JSON403, resp.JSON500), "list")
 		}
 
-		var summaries []ClientSummary
+		var summaries []oauth2mgmt.ClientSummary
 		if resp.JSON200.Clients != nil {
 			summaries = *resp.JSON200.Clients
 		}
@@ -140,7 +132,7 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Client
 			if q.Search != "" && (s.ClientName == nil || *s.ClientName != q.Search) {
 				continue
 			}
-			clients = append(clients, &Client{
+			clients = append(clients, &oauth2mgmt.Client{
 				ClientId:              s.ClientId,
 				ClientIdIssuedAt:      s.ClientIdIssuedAt,
 				ClientName:            s.ClientName,
@@ -152,7 +144,7 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Client
 		}
 
 		seen += len(summaries)
-		if q.Search == "" || len(summaries) == 0 {
+		if len(summaries) == 0 {
 			break
 		}
 		if t := resp.JSON200.Total; t != nil && seen >= *t {
@@ -163,7 +155,7 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Client
 }
 
 // create registers a new client and returns it as stored by the server.
-func create(ctx context.Context, c resource.Conn, v *Client) (*Client, error) {
+func create(ctx context.Context, c resource.Conn, v *oauth2mgmt.Client) (*oauth2mgmt.Client, error) {
 	client, err := authorize(ctx, c)
 	if err != nil {
 		return nil, err
@@ -202,7 +194,7 @@ func create(ctx context.Context, c resource.Conn, v *Client) (*Client, error) {
 }
 
 // replace fully replaces a client definition and returns it as stored.
-func replace(ctx context.Context, c resource.Conn, id string, v *Client) (*Client, error) {
+func replace(ctx context.Context, c resource.Conn, id string, v *oauth2mgmt.Client) (*oauth2mgmt.Client, error) {
 	client, err := authorize(ctx, c)
 	if err != nil {
 		return nil, err

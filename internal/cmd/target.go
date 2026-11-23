@@ -14,13 +14,17 @@ import (
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/agents"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/clients"
-	"github.com/ibm-verify/agent-identity-cli/internal/resource/foo"
 )
+
+// resourceList is the list of active resources offered by the CLI.
+var resourceList = func() []*resource.Resource {
+	return []*resource.Resource{agents.Resource(), clients.Resource()}
+}
 
 // resources is every resource the verbs offer, in the order shown in help.
 // Add a resource here.
 func resources() []*resource.Resource {
-	return []*resource.Resource{foo.Resource(), agents.Resource(), clients.Resource()}
+	return resourceList()
 }
 
 // target is the object a command acts on: an ID argument or --name.

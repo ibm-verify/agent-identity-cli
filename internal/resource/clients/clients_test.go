@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2mgmt"
 	"github.com/ibm-verify/agent-identity-cli/internal/input"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
@@ -42,19 +43,19 @@ func TestTagsMatch(t *testing.T) {
 		}
 	}
 	for _, typ := range []reflect.Type{
-		reflect.TypeFor[Client](),
-		reflect.TypeFor[ClientListResponse](),
-		reflect.TypeFor[ClientMetadata](),
-		reflect.TypeFor[ClientPayload](),
-		reflect.TypeFor[ClientSummary](),
-		reflect.TypeFor[ClientWriteRequest](),
-		reflect.TypeFor[DynamicClientExtension](),
-		reflect.TypeFor[DynamicClientRequest](),
-		reflect.TypeFor[Error](),
-		reflect.TypeFor[OnPremClientFields](),
-		reflect.TypeFor[SingleLogoutSettings](),
-		reflect.TypeFor[TokenExchangeSettings](),
-		reflect.TypeFor[AuthorizationDetailsTypesFilter](),
+		reflect.TypeFor[oauth2mgmt.Client](),
+		reflect.TypeFor[oauth2mgmt.ClientListResponse](),
+		reflect.TypeFor[oauth2mgmt.ClientMetadata](),
+		reflect.TypeFor[oauth2mgmt.ClientPayload](),
+		reflect.TypeFor[oauth2mgmt.ClientSummary](),
+		reflect.TypeFor[oauth2mgmt.ClientWriteRequest](),
+		reflect.TypeFor[oauth2mgmt.DynamicClientExtension](),
+		reflect.TypeFor[oauth2mgmt.DynamicClientRequest](),
+		reflect.TypeFor[oauth2mgmt.Error](),
+		reflect.TypeFor[oauth2mgmt.OnPremClientFields](),
+		reflect.TypeFor[oauth2mgmt.SingleLogoutSettings](),
+		reflect.TypeFor[oauth2mgmt.TokenExchangeSettings](),
+		reflect.TypeFor[oauth2mgmt.AuthorizationDetailsTypesFilter](),
 	} {
 		check(typ)
 	}
@@ -65,13 +66,13 @@ func TestTagsMatch(t *testing.T) {
 func TestTemplateDecodesInBothFormats(t *testing.T) {
 	r := Resource()
 
-	var got []*Client
+	var got []*oauth2mgmt.Client
 	for _, format := range []string{"yaml", "json"} {
 		b, err := r.Template(format)
 		if err != nil {
 			t.Fatal(err)
 		}
-		v, err := input.Decode[Client](&input.Data{Bytes: b})
+		v, err := input.Decode[oauth2mgmt.Client](&input.Data{Bytes: b})
 		if err != nil {
 			t.Fatalf("%s: %v", format, err)
 		}
@@ -108,7 +109,7 @@ func TestResourceOffersConfiguredVerbs(t *testing.T) {
 	if r.Name != "clients" || r.Singular != "client" || !reflect.DeepEqual(r.Aliases, []string{"client"}) {
 		t.Errorf("names: %q %q %v", r.Name, r.Singular, r.Aliases)
 	}
-	if !r.ListFlags.Limit || !r.ListFlags.Page || !r.ListFlags.Search || r.ListFlags.Sort {
+	if r.ListFlags.Limit || r.ListFlags.Page || !r.ListFlags.Search || r.ListFlags.Sort {
 		t.Errorf("list flags: %+v", r.ListFlags)
 	}
 }
@@ -245,7 +246,7 @@ func TestGet(t *testing.T) {
 	if obj.ID != "c-1" || obj.Name != "alpha" {
 		t.Errorf("object: %+v", obj)
 	}
-	got := obj.Value.(*Client)
+	got := obj.Value.(*oauth2mgmt.Client)
 	if got.Enabled == nil || !*got.Enabled {
 		t.Errorf("enabled: %+v", got)
 	}
@@ -270,7 +271,7 @@ func TestList(t *testing.T) {
 	if l.Len != 3 {
 		t.Fatalf("len: %d", l.Len)
 	}
-	first := l.Items.([]*Client)[0]
+	first := l.Items.([]*oauth2mgmt.Client)[0]
 	if first.ClientId == nil || *first.ClientId != "c-1" || first.ClientName == nil || *first.ClientName != "alpha" {
 		t.Errorf("first: %+v", first)
 	}
@@ -284,17 +285,8 @@ func TestList(t *testing.T) {
 			t.Errorf("table lacks %q:\n%s", want, table)
 		}
 	}
-	if c := (*calls)[0]; c.Method != http.MethodGet || c.Path != "/v1.0/oauth_clients" || len(c.Query["limit"]) != 0 || len(c.Query["page"]) != 0 {
+	if c := (*calls)[0]; c.Method != http.MethodGet || c.Path != "/v1.0/oauth_clients" {
 		t.Errorf("request: %+v", c)
-	}
-
-	// Paging with limit and page.
-	if _, err := r.List(t.Context(), conn, resource.ListQuery{Limit: 10, Page: 2}); err != nil {
-		t.Fatal(err)
-	}
-	q := (*calls)[1].Query
-	if q.Get("limit") != "10" || q.Get("page") != "2" {
-		t.Errorf("query: %v", q)
 	}
 }
 

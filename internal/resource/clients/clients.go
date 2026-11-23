@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2mgmt"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
 
@@ -9,10 +10,12 @@ client_name: My Application
 # Whether the client is enabled.
 enabled: true
 # Grant types the client may use: authorization_code, client_credentials,
-# implicit, password, refresh_token or urn:openid:params:grant-type:ciba.
+# implicit, password, refresh_token, urn:ietf:params:oauth:grant-type:token-exchange
+# or urn:openid:params:grant-type:ciba.
 grant_types:
   - authorization_code
   - refresh_token
+  - urn:ietf:params:oauth:grant-type:token-exchange
 # Response types the client may use, such as code, token or id_token.
 response_types:
   - code
@@ -43,26 +46,26 @@ func strs[S ~string](p *[]S) string {
 // Resource returns the definition of clients, which is all that cmd.NewRoot
 // needs. The API has no PATCH, so the patch verb is not offered.
 func Resource() *resource.Resource {
-	d := &resource.Def[Client]{
+	d := &resource.Def[oauth2mgmt.Client]{
 		Name:     "clients",
 		Singular: "client",
 		Aliases:  []string{"client"},
 		Template: template,
-		Columns: []resource.Column[Client]{
-			{Header: "CLIENT_NAME", Value: func(c *Client) string { return resource.Str(c.ClientName) }},
-			{Header: "GRANT_TYPES", Value: func(c *Client) string { return strs(c.GrantTypes) }},
-			{Header: "ENABLED", Value: func(c *Client) string { return resource.Bool(c.Enabled) }},
-			{Header: "TAGS", Value: func(c *Client) string { return strs(c.Tags) }},
+		Columns: []resource.Column[oauth2mgmt.Client]{
+			{Header: "CLIENT_NAME", Value: func(c *oauth2mgmt.Client) string { return resource.Str(c.ClientName) }},
+			{Header: "GRANT_TYPES", Value: func(c *oauth2mgmt.Client) string { return strs(c.GrantTypes) }},
+			{Header: "ENABLED", Value: func(c *oauth2mgmt.Client) string { return resource.Bool(c.Enabled) }},
+			{Header: "TAGS", Value: func(c *oauth2mgmt.Client) string { return strs(c.Tags) }},
 		},
-		ListFlags: resource.ListSupport{Limit: true, Page: true, Search: true},
+		ListFlags: resource.ListSupport{Search: true},
 
-		ID:     func(c *Client) string { return resource.Str(c.ClientId) },
-		NameOf: func(c *Client) string { return resource.Str(c.ClientName) },
+		ID:     func(c *oauth2mgmt.Client) string { return resource.Str(c.ClientId) },
+		NameOf: func(c *oauth2mgmt.Client) string { return resource.Str(c.ClientName) },
 
 		// The server assigns these, so input that carries them (the output of
 		// get) is accepted and they are dropped. Client has no client_secret
 		// property, so there is nothing to mask.
-		Strip: func(c *Client) {
+		Strip: func(c *oauth2mgmt.Client) {
 			c.ClientIdIssuedAt, c.ClientSecretExpiresAt = nil, nil
 			c.DefinitionName, c.CreatedAt = nil, nil
 		},
