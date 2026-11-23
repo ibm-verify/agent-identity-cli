@@ -17,11 +17,12 @@ import (
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/agents"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/clients"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/foo"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/serverconnections"
 )
 
 func init() {
 	resourceList = func() []*resource.Resource {
-		return []*resource.Resource{foo.Resource(), agents.Resource(), clients.Resource()}
+		return []*resource.Resource{foo.Resource(), agents.Resource(), clients.Resource(), serverconnections.Resource()}
 	}
 }
 
