@@ -12,6 +12,7 @@ Each resource has a plural name, such as `agents`, and a singular alias, such as
 | `oauth-providers` | An OAuth 2.0 / OIDC provider definition (issuer, keystores and token settings) registered with the Agent Identity server. | get, create, replace, delete |
 | `keystores` | A named keystore of keys and certificates (PKCS#12 or PEM) held by the Agent Identity server. | get, create, replace, delete |
 | `auth-detail-types` | An OAuth 2.0 Rich Authorization Requests (RFC 9396) authorization detail type, with the schema of its payload. | get, create, replace, delete |
+| `custom-token-types` | A trusted external token issuer, so its tokens are accepted as a `subject_token_type` or `actor_token_type` in token exchange. | get, create, replace, delete |
 
 ## Agent
 
@@ -109,5 +110,22 @@ The API has no partial update, so `patch` is not offered for authorization detai
 | `created_at`, `updated_at` | Assigned by the server. Read-only. They are accepted in input, such as the output of `get`, and ignored. |
 
 `get auth-detail-types` accepts `--search`, `--limit` and `--page` (from 1). `--search` matches the `type` exactly. When it is given, every page is searched, so `--limit` and `--page` do not apply. Run `create auth-detail-type --template` for the full template with comments.
+
+## Custom Token Type
+
+The API has no partial update, so `patch` is not offered for custom token types. Use `replace`, which sets the whole definition. The `name` and the `type` are immutable: `replace` must carry the same values as the stored type, or the server refuses it.
+
+| Property | Notes |
+| :--- | :--- |
+| `id` | Assigned by the server: the base64url of `name`, without padding. Read-only. Used as the target of `get`, `replace` and `delete`. |
+| `name` | The value clients send as `subject_token_type` or `actor_token_type`. Unique, immutable and must not collide with a built-in token type. Required. This is the name for `--name`. |
+| `type` | `urn:ietf:params:oauth:token-type:jwt`, the only type supported. Required. |
+| `issuer` | Trusted issuer. Must match the `iss` claim of incoming tokens. Required. |
+| `validate` | How incoming tokens are validated. Required. Give exactly one of `jwksUri` (https only) and `jwks` (inline, public keys only), and at least one of `allowedSigningAlgs`. Also `allowedKids`, `validateJti`, `timeSkew` and `toleranceWindow`. |
+| `identityMapping` | Links the token subject to a local identity: `subjectId`, `searchBy`, `entityType` and `userRegistryConnection`. Active only if `searchBy` is set. |
+| `identityMappingRule` | Name of a mapping rule, instead of or as a fallback to `identityMapping`. The server does not check that the rule exists. |
+| `created_at`, `updated_at` | Assigned by the server. Read-only. They are accepted in input, such as the output of `get`, and ignored. |
+
+`get custom-token-types` accepts `--search`, `--limit` and `--page` (from 1). `--search` matches the `name` exactly. When it is given, every page is searched, so `--limit` and `--page` do not apply. Deleting a custom token type that does not exist succeeds. Run `create custom-token-type --template` for the full template with comments.
 
 Adding a resource is described in [`internal/resource/spec.md`](../internal/resource/spec.md) §10.
