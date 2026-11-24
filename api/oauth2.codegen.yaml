@@ -1,7 +1,7 @@
-# oapi-codegen configuration for the OAuth2 Management API (consolidated openapi.yaml).
+# oapi-codegen configuration for the OAuth2 API (consolidated openapi.yaml).
 # Paths are relative to the api/ directory, where `go generate` runs (see generate.go).
-package: oauth2mgmt
-output: ../internal/client/oauth2mgmt/openapi.gen.go
+package: oauth2
+output: ../internal/client/oauth2/openapi.gen.go
 generate:
   models: true
   client: true
@@ -11,6 +11,6 @@ output-options:
   # The OpenAPI schema "Client" would otherwise collide with the generated
   # HTTP client type of the same name.
   client-type-name: APIClient
-  # The consolidated spec covers several APIs; generate only the OAuth2 Management operations.
+  # The consolidated spec covers several APIs; generate only the OAuth2 operations.
   include-tags:
-    - OAuth2 Management
+    - OAuth2

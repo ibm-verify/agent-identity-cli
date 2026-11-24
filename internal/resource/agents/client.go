@@ -28,7 +28,7 @@ func newClient(ctx context.Context, c resource.Conn) (*registry.ClientWithRespon
 	if c.Token == "" {
 		return nil, resource.Unauthorized()
 	}
-	var httpClient registry.HttpRequestDoer = c.HTTP
+	httpClient := c.HTTP
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}

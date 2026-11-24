@@ -443,7 +443,7 @@ func TestRejectedTokenHint(t *testing.T) {
 		t.Errorf("hint: %q", sink.String())
 	}
 	sink.Reset()
-	(&connection{}).explain(root, err)
+	_ = (&connection{}).explain(root, err)
 	if sink.Len() != 0 {
 		t.Errorf("no hint for a saved context: %q", sink.String())
 	}
