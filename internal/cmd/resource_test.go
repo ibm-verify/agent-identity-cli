@@ -15,14 +15,23 @@ import (
 	"github.com/ibm-verify/agent-identity-cli/internal/profile"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/agents"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/authdetailtypes"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/clients"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/customtokentypes"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/foo"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/keystores"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/oauthproviders"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/rules"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/serverconnections"
 )
 
 func init() {
 	resourceList = func() []*resource.Resource {
-		return []*resource.Resource{foo.Resource(), agents.Resource(), clients.Resource(), serverconnections.Resource()}
+		return []*resource.Resource{
+			foo.Resource(), agents.Resource(), clients.Resource(), serverconnections.Resource(),
+			oauthproviders.Resource(), keystores.Resource(), authdetailtypes.Resource(),
+			customtokentypes.Resource(), rules.Resource(),
+		}
 	}
 }
 
