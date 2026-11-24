@@ -13,6 +13,7 @@ Each resource has a plural name, such as `agents`, and a singular alias, such as
 | `keystores` | A named keystore of keys and certificates (PKCS#12 or PEM) held by the Agent Identity server. | get, create, replace, delete |
 | `auth-detail-types` | An OAuth 2.0 Rich Authorization Requests (RFC 9396) authorization detail type, with the schema of its payload. | get, create, replace, delete |
 | `custom-token-types` | A trusted external token issuer, so its tokens are accepted as a `subject_token_type` or `actor_token_type` in token exchange. | get, create, replace, delete |
+| `rules` | A server-side JavaScript rule: a mapping rule that shapes tokens and claims, or an access policy that decides a request. | get, create, replace, delete |
 
 ## Agent
 
@@ -127,5 +128,22 @@ The API has no partial update, so `patch` is not offered for custom token types.
 | `created_at`, `updated_at` | Assigned by the server. Read-only. They are accepted in input, such as the output of `get`, and ignored. |
 
 `get custom-token-types` accepts `--search`, `--limit` and `--page` (from 1). `--search` matches the `name` exactly. When it is given, every page is searched, so `--limit` and `--page` do not apply. Deleting a custom token type that does not exist succeeds. Run `create custom-token-type --template` for the full template with comments.
+
+## Rule
+
+The API has no partial update, so `patch` is not offered for rules. Use `replace`, which sets the class and the source. The name is the identifier and cannot change, so `replace` does not send it. A payload that carries a different `name` than the target is refused.
+
+| Property | Notes |
+| :--- | :--- |
+| `name` | The unique name, the identifier. Immutable. Required. A mapping rule can call another one with `importMappingRule("<name>")`. |
+| `class` | `mappingrule` or `accesspolicy`. Required. |
+| `source` | The JavaScript source, usually several lines. Required. The server does not check the syntax when it is written. A list leaves it out: use `get rule <name>` for the source. |
+| `type` | The language, always `javascript`. Set by the server. Read-only. |
+| `import_script_names`, `import_binding_names` | The rules imported with `importMappingRule()` and the classes or packages imported with `importClass` or `importPackage`. Derived by the server. Read-only. |
+| `created_at`, `updated_at` | Assigned by the server. Read-only. |
+
+The read-only properties are accepted in input, such as the output of `get`, and ignored.
+
+`get rules` accepts `--search`, `--limit` and `--page` (from 1). `--search` matches the `name` exactly. When it is given, every page is searched, so `--limit` and `--page` do not apply. Deleting a rule that does not exist succeeds. Run `create rule --template` for the full template with comments.
 
 Adding a resource is described in [`internal/resource/spec.md`](../internal/resource/spec.md) §10.
