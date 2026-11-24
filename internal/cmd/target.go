@@ -18,12 +18,13 @@ import (
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/customtokentypes"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/keystores"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/oauthproviders"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/rules"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/serverconnections"
 )
 
 // resourceList is the list of active resources offered by the CLI.
 var resourceList = func() []*resource.Resource {
-	return []*resource.Resource{agents.Resource(), clients.Resource(), serverconnections.Resource(), oauthproviders.Resource(), keystores.Resource(), authdetailtypes.Resource(), customtokentypes.Resource()}
+	return []*resource.Resource{agents.Resource(), clients.Resource(), serverconnections.Resource(), oauthproviders.Resource(), keystores.Resource(), authdetailtypes.Resource(), customtokentypes.Resource(), rules.Resource()}
 }
 
 // resources is every resource the verbs offer, in the order shown in help.
