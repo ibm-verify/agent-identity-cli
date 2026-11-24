@@ -11,6 +11,7 @@ Each resource has a plural name, such as `agents`, and a singular alias, such as
 | `server-connections` | A reusable outbound connection (HTTP or LDAP) registered with the Agent Identity server. | get, create, replace, delete |
 | `oauth-providers` | An OAuth 2.0 / OIDC provider definition (issuer, keystores and token settings) registered with the Agent Identity server. | get, create, replace, delete |
 | `keystores` | A named keystore of keys and certificates (PKCS#12 or PEM) held by the Agent Identity server. | get, create, replace, delete |
+| `auth-detail-types` | An OAuth 2.0 Rich Authorization Requests (RFC 9396) authorization detail type, with the schema of its payload. | get, create, replace, delete |
 
 ## Agent
 
@@ -90,5 +91,23 @@ The API has no partial update, so `patch` is not offered for keystores. Use `rep
 | `created_at`, `updated_at` | Assigned by the server. Read-only. They are accepted in input, such as the output of `get`, and ignored. |
 
 Because `keystore_data` and `keystore_password` are never returned, the output of `get` cannot be sent back to `replace` as it is: add the data again. `get keystores` accepts `--search`, `--limit` and `--page` (from 1). `--search` matches the `keystore_name` exactly. When it is given, every page is searched, so `--limit` and `--page` do not apply. Deleting a keystore that does not exist succeeds. Run `create keystore --template` for the full template with comments.
+
+## Authorization Detail Type
+
+The API has no partial update, so `patch` is not offered for authorization detail types. Use `replace`, which sets the whole definition.
+
+| Property | Notes |
+| :--- | :--- |
+| `id` | Assigned by the server: the base64url of `type`, without padding. Read-only. Used as the target of `get`, `replace` and `delete`. |
+| `type` | The authorization detail type URI. Unique and immutable. Required. This is the name for `--name`. |
+| `description` | Short description. |
+| `schema` | The JSON schema describing the payload structure, as a string. |
+| `signatureStrategy` | How the authorization detail signature is calculated: `full_hash` (the default), `partial_hash` or `custom`. |
+| `signatureRule` | Rule used to calculate the signature when `signatureStrategy` is `custom`. |
+| `inlineMode` | Whether inline HTML (`true`) or a template label (`false`) is used for consent. |
+| `useCustomMapping` | Whether a custom privacy model is used. |
+| `created_at`, `updated_at` | Assigned by the server. Read-only. They are accepted in input, such as the output of `get`, and ignored. |
+
+`get auth-detail-types` accepts `--search`, `--limit` and `--page` (from 1). `--search` matches the `type` exactly. When it is given, every page is searched, so `--limit` and `--page` do not apply. Run `create auth-detail-type --template` for the full template with comments.
 
 Adding a resource is described in [`internal/resource/spec.md`](../internal/resource/spec.md) §10.
