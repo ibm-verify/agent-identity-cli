@@ -10,6 +10,7 @@ Each resource has a plural name, such as `agents`, and a singular alias, such as
 | `clients` | An OAuth client registered with the Agent Identity server. | get, create, replace, delete |
 | `server-connections` | A reusable outbound connection (HTTP or LDAP) registered with the Agent Identity server. | get, create, replace, delete |
 | `oauth-providers` | An OAuth 2.0 / OIDC provider definition (issuer, keystores and token settings) registered with the Agent Identity server. | get, create, replace, delete |
+| `keystores` | A named keystore of keys and certificates (PKCS#12 or PEM) held by the Agent Identity server. | get, create, replace, delete |
 
 ## Agent
 
@@ -75,5 +76,19 @@ The API has no partial update, so `patch` is not offered for OAuth providers. Us
 
 `get oauth-providers` accepts `--search`, `--limit` and `--page` (from 1). `--search` matches the `definition_name` exactly. When it is given, every page is searched, so `--limit` and `--page` do not apply. Run `create oauth-provider --template` for the full template with comments.
 
+
+## Keystore
+
+The API has no partial update, so `patch` is not offered for keystores. Use `replace`, which sets the whole definition.
+
+| Property | Notes |
+| :--- | :--- |
+| `keystore_name` | Unique name of the keystore. Identifier, immutable. Required. Other resources refer to it as `ks:<name>`. |
+| `keystore_type` | `p12` or `pem`. Required. |
+| `keystore_data` | Content of the keystore. Write-only, never returned. For `p12`, the base64-encoded PKCS#12 file. For `pem`, a JSON document with `certificates` and `keys`, each an array of `label` and PEM `content`. |
+| `keystore_password` | Password of a `p12` keystore. Write-only, never returned. |
+| `created_at`, `updated_at` | Assigned by the server. Read-only. They are accepted in input, such as the output of `get`, and ignored. |
+
+Because `keystore_data` and `keystore_password` are never returned, the output of `get` cannot be sent back to `replace` as it is: add the data again. `get keystores` accepts `--search`, `--limit` and `--page` (from 1). `--search` matches the `keystore_name` exactly. When it is given, every page is searched, so `--limit` and `--page` do not apply. Deleting a keystore that does not exist succeeds. Run `create keystore --template` for the full template with comments.
 
 Adding a resource is described in [`internal/resource/spec.md`](../internal/resource/spec.md) §10.
