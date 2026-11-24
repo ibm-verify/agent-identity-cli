@@ -18,7 +18,7 @@ security:
 tags:
 - name: Registry
   description: SCIM 2.0 operations for managing Agent Identities.
-- name: OAuth2 Management
+- name: OAuth2
   description: OAuth 2.0 / OIDC clients, providers, authorization details, and custom
     tokens.
 - name: Platform
@@ -985,7 +985,7 @@ paths:
       description: Returns a paginated list of authorization detail types for this
         tenant.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/page'
@@ -1019,7 +1019,7 @@ paths:
       operationId: createAuthDetailType
       description: Creates a new authorization detail type.
       tags:
-      - OAuth2 Management
+      - OAuth2
       requestBody:
         required: true
         content:
@@ -1076,7 +1076,7 @@ paths:
       description: Returns an authorization detail type by its base64url ID or literal
         type URI.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/auth_detail_type_id'
       responses:
@@ -1109,7 +1109,7 @@ paths:
       operationId: replaceAuthDetailType
       description: Replaces an existing authorization detail type definition.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/auth_detail_type_id'
       requestBody:
@@ -1156,7 +1156,7 @@ paths:
       operationId: deleteAuthDetailType
       description: Deletes an authorization detail type by its ID or type URI.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/auth_detail_type_id'
       responses:
@@ -1377,7 +1377,7 @@ paths:
       operationId: listOAuthProviders
       description: Returns a paginated list of OAuth provider configurations.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/page'
@@ -1405,7 +1405,7 @@ paths:
       operationId: createOAuthProvider
       description: Creates a new OAuth provider definition.
       tags:
-      - OAuth2 Management
+      - OAuth2
       requestBody:
         required: true
         description: OAuth provider definition.
@@ -1457,7 +1457,7 @@ paths:
       description: Returns the OAuth Provider configuration for the specified provider
         name.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - name: name
         in: path
@@ -1490,7 +1490,7 @@ paths:
       description: Replaces the OAuth Provider configuration for the specified provider
         name.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - name: name
         in: path
@@ -1540,7 +1540,7 @@ paths:
       operationId: deleteOAuthProvider
       description: Deletes the specified OAuth provider configuration.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - name: name
         in: path
@@ -1569,7 +1569,7 @@ paths:
       operationId: listClients
       description: Returns a paginated list of client summaries.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/page'
@@ -1606,7 +1606,7 @@ paths:
 
         '
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters: null
       requestBody:
         required: true
@@ -1660,7 +1660,7 @@ paths:
       operationId: getClient
       description: Returns the full client definition for the given client ID.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/client_id'
       responses:
@@ -1693,7 +1693,7 @@ paths:
       operationId: replaceClient
       description: Fully replaces the client definition for the given client ID.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/client_id'
       requestBody:
@@ -1742,7 +1742,7 @@ paths:
       description: Deletes the client. Idempotent — returns 204 even if the client
         does not exist.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/client_id'
       responses:
@@ -1967,7 +1967,7 @@ paths:
       operationId: listCustomTokenTypes
       description: Returns a paginated list of custom token types, ordered by name.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/page'
@@ -2006,7 +2006,7 @@ paths:
 
         '
       tags:
-      - OAuth2 Management
+      - OAuth2
       requestBody:
         required: true
         description: Custom token type definition.
@@ -2063,7 +2063,7 @@ paths:
       operationId: getCustomTokenType
       description: Returns the custom token type with the given id.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/custom_token_type_id'
       responses:
@@ -2100,7 +2100,7 @@ paths:
 
         '
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/custom_token_type_id'
       requestBody:
@@ -2149,7 +2149,7 @@ paths:
       description: Deletes the custom token type. Idempotent — returns 204 even if
         it does not exist.
       tags:
-      - OAuth2 Management
+      - OAuth2
       parameters:
       - $ref: '#/components/parameters/custom_token_type_id'
       responses:

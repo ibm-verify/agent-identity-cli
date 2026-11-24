@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2mgmt"
+	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2"
 	"github.com/ibm-verify/agent-identity-cli/internal/input"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
@@ -43,19 +43,19 @@ func TestTagsMatch(t *testing.T) {
 		}
 	}
 	for _, typ := range []reflect.Type{
-		reflect.TypeFor[oauth2mgmt.Client](),
-		reflect.TypeFor[oauth2mgmt.ClientListResponse](),
-		reflect.TypeFor[oauth2mgmt.ClientMetadata](),
-		reflect.TypeFor[oauth2mgmt.ClientPayload](),
-		reflect.TypeFor[oauth2mgmt.ClientSummary](),
-		reflect.TypeFor[oauth2mgmt.ClientWriteRequest](),
-		reflect.TypeFor[oauth2mgmt.DynamicClientExtension](),
-		reflect.TypeFor[oauth2mgmt.DynamicClientRequest](),
-		reflect.TypeFor[oauth2mgmt.Error](),
-		reflect.TypeFor[oauth2mgmt.OnPremClientFields](),
-		reflect.TypeFor[oauth2mgmt.SingleLogoutSettings](),
-		reflect.TypeFor[oauth2mgmt.TokenExchangeSettings](),
-		reflect.TypeFor[oauth2mgmt.AuthorizationDetailsTypesFilter](),
+		reflect.TypeFor[oauth2.Client](),
+		reflect.TypeFor[oauth2.ClientListResponse](),
+		reflect.TypeFor[oauth2.ClientMetadata](),
+		reflect.TypeFor[oauth2.ClientPayload](),
+		reflect.TypeFor[oauth2.ClientSummary](),
+		reflect.TypeFor[oauth2.ClientWriteRequest](),
+		reflect.TypeFor[oauth2.DynamicClientExtension](),
+		reflect.TypeFor[oauth2.DynamicClientRequest](),
+		reflect.TypeFor[oauth2.Error](),
+		reflect.TypeFor[oauth2.OnPremClientFields](),
+		reflect.TypeFor[oauth2.SingleLogoutSettings](),
+		reflect.TypeFor[oauth2.TokenExchangeSettings](),
+		reflect.TypeFor[oauth2.AuthorizationDetailsTypesFilter](),
 	} {
 		check(typ)
 	}
@@ -66,13 +66,13 @@ func TestTagsMatch(t *testing.T) {
 func TestTemplateDecodesInBothFormats(t *testing.T) {
 	r := Resource()
 
-	var got []*oauth2mgmt.Client
+	var got []*oauth2.Client
 	for _, format := range []string{"yaml", "json"} {
 		b, err := r.Template(format)
 		if err != nil {
 			t.Fatal(err)
 		}
-		v, err := input.Decode[oauth2mgmt.Client](&input.Data{Bytes: b})
+		v, err := input.Decode[oauth2.Client](&input.Data{Bytes: b})
 		if err != nil {
 			t.Fatalf("%s: %v", format, err)
 		}
@@ -257,7 +257,7 @@ func TestGet(t *testing.T) {
 	if obj.ID != "c-1" || obj.Name != "alpha" {
 		t.Errorf("object: %+v", obj)
 	}
-	got := obj.Value.(*oauth2mgmt.Client)
+	got := obj.Value.(*oauth2.Client)
 	if got.Enabled == nil || !*got.Enabled {
 		t.Errorf("enabled: %+v", got)
 	}
@@ -282,7 +282,7 @@ func TestList(t *testing.T) {
 	if l.Len != 3 {
 		t.Fatalf("len: %d", l.Len)
 	}
-	first := l.Items.([]*oauth2mgmt.Client)[0]
+	first := l.Items.([]*oauth2.Client)[0]
 	if first.ClientId == nil || *first.ClientId != "c-1" || first.ClientName == nil || *first.ClientName != "alpha" {
 		t.Errorf("first: %+v", first)
 	}
