@@ -1,7 +1,7 @@
 package oauthproviders
 
 import (
-	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2mgmt"
+	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
 
@@ -29,20 +29,20 @@ token_settings:
 // Resource returns the definition of oauth-providers, which is all that cmd.NewRoot
 // needs. The API has no PATCH, so the patch verb is not offered.
 func Resource() *resource.Resource {
-	d := &resource.Def[oauth2mgmt.OAuthProviderResponse]{
+	d := &resource.Def[oauth2.OAuthProviderResponse]{
 		Name:     "oauth-providers",
 		Singular: "oauth-provider",
 		Aliases:  []string{"oauth-provider", "oauth_providers", "oauth_provider"},
 		Template: template,
-		Columns: []resource.Column[oauth2mgmt.OAuthProviderResponse]{
-			{Header: "ISSUER", Value: func(p *oauth2mgmt.OAuthProviderResponse) string { return p.Issuer }},
-			{Header: "SIGNING_KEY", Value: func(p *oauth2mgmt.OAuthProviderResponse) string {
+		Columns: []resource.Column[oauth2.OAuthProviderResponse]{
+			{Header: "ISSUER", Value: func(p *oauth2.OAuthProviderResponse) string { return p.Issuer }},
+			{Header: "SIGNING_KEY", Value: func(p *oauth2.OAuthProviderResponse) string {
 				if p.TokenSettings == nil {
 					return ""
 				}
 				return p.TokenSettings.SigningKeyLabel
 			}},
-			{Header: "ALGORITHM", Value: func(p *oauth2mgmt.OAuthProviderResponse) string {
+			{Header: "ALGORITHM", Value: func(p *oauth2.OAuthProviderResponse) string {
 				if p.TokenSettings == nil {
 					return ""
 				}
@@ -51,12 +51,12 @@ func Resource() *resource.Resource {
 		},
 		ListFlags: resource.ListSupport{Limit: true, Page: true, Search: true},
 
-		ID:     func(p *oauth2mgmt.OAuthProviderResponse) string { return p.DefinitionName },
-		NameOf: func(p *oauth2mgmt.OAuthProviderResponse) string { return p.DefinitionName },
+		ID:     func(p *oauth2.OAuthProviderResponse) string { return p.DefinitionName },
+		NameOf: func(p *oauth2.OAuthProviderResponse) string { return p.DefinitionName },
 
 		// The server assigns the version and timestamps, so input that carries them
 		// is accepted and dropped.
-		Strip: func(p *oauth2mgmt.OAuthProviderResponse) {
+		Strip: func(p *oauth2.OAuthProviderResponse) {
 			p.CreatedAt, p.UpdatedAt, p.Version = nil, nil, nil
 		},
 

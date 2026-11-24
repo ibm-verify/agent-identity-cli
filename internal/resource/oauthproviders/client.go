@@ -9,13 +9,13 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2mgmt"
+	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
 
 // authDoer wraps an HttpRequestDoer to inject the Bearer token authorization header.
 type authDoer struct {
-	client oauth2mgmt.HttpRequestDoer
+	client oauth2.HttpRequestDoer
 	token  string
 }
 
@@ -26,19 +26,19 @@ func (d *authDoer) Do(req *http.Request) (*http.Response, error) {
 }
 
 // authorize constructs a ClientWithResponses configured with authorization.
-func authorize(ctx context.Context, c resource.Conn) (*oauth2mgmt.ClientWithResponses, error) {
+func authorize(ctx context.Context, c resource.Conn) (*oauth2.ClientWithResponses, error) {
 	if c.Token == "" {
 		return nil, resource.Unauthorized()
 	}
-	var httpClient oauth2mgmt.HttpRequestDoer = c.HTTP
+	var httpClient oauth2.HttpRequestDoer = c.HTTP
 	if c.HTTP == nil {
 		httpClient = http.DefaultClient
 	}
-	return oauth2mgmt.NewClientWithResponses(c.Server, oauth2mgmt.WithHTTPClient(&authDoer{client: httpClient, token: c.Token}))
+	return oauth2.NewClientWithResponses(c.Server, oauth2.WithHTTPClient(&authDoer{client: httpClient, token: c.Token}))
 }
 
 // firstError returns the first non-nil Error payload.
-func firstError(errs ...*oauth2mgmt.Error) *oauth2mgmt.Error {
+func firstError(errs ...*oauth2.Error) *oauth2.Error {
 	for _, e := range errs {
 		if e != nil {
 			return e
@@ -48,7 +48,7 @@ func firstError(errs ...*oauth2mgmt.Error) *oauth2mgmt.Error {
 }
 
 // parseError translates an HTTP status code and error payload to a CLI resource error.
-func parseError(statusCode int, body []byte, apiErr *oauth2mgmt.Error, target string) error {
+func parseError(statusCode int, body []byte, apiErr *oauth2.Error, target string) error {
 	switch statusCode {
 	case http.StatusUnauthorized:
 		return resource.Unauthorized()
@@ -56,7 +56,7 @@ func parseError(statusCode int, body []byte, apiErr *oauth2mgmt.Error, target st
 		return resource.NotFound("oauth-provider", target)
 	}
 	if apiErr == nil && len(body) > 0 {
-		var e oauth2mgmt.Error
+		var e oauth2.Error
 		if err := json.Unmarshal(body, &e); err == nil && e.Error != "" {
 			apiErr = &e
 		}
@@ -74,9 +74,9 @@ func parseError(statusCode int, body []byte, apiErr *oauth2mgmt.Error, target st
 }
 
 // toWriteRequest converts an OAuthProviderResponse to the create/replace request body.
-func toWriteRequest(v *oauth2mgmt.OAuthProviderResponse) oauth2mgmt.OAuthProviderWriteRequest {
+func toWriteRequest(v *oauth2.OAuthProviderResponse) oauth2.OAuthProviderWriteRequest {
 	name := v.DefinitionName
-	return oauth2mgmt.OAuthProviderWriteRequest{
+	return oauth2.OAuthProviderWriteRequest{
 		DefinitionName:  &name,
 		Issuer:          v.Issuer,
 		JwksSigKeystore: v.JwksSigKeystore,
@@ -87,7 +87,7 @@ func toWriteRequest(v *oauth2mgmt.OAuthProviderResponse) oauth2mgmt.OAuthProvide
 }
 
 // get retrieves an OAuth provider by definition name.
-func get(ctx context.Context, c resource.Conn, name string) (*oauth2mgmt.OAuthProviderResponse, error) {
+func get(ctx context.Context, c resource.Conn, name string) (*oauth2.OAuthProviderResponse, error) {
 	client, err := authorize(ctx, c)
 	if err != nil {
 		return nil, err
@@ -105,16 +105,16 @@ func get(ctx context.Context, c resource.Conn, name string) (*oauth2mgmt.OAuthPr
 // list returns OAuth providers. With a search term it walks every page and keeps
 // the providers whose definition_name equals the term; otherwise it asks the
 // server for the requested page.
-func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*oauth2mgmt.OAuthProviderResponse, error) {
+func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*oauth2.OAuthProviderResponse, error) {
 	client, err := authorize(ctx, c)
 	if err != nil {
 		return nil, err
 	}
 
-	var providers []*oauth2mgmt.OAuthProviderResponse
+	var providers []*oauth2.OAuthProviderResponse
 	seen := 0
 	for page := 1; ; page++ {
-		params := &oauth2mgmt.ListOAuthProvidersParams{}
+		params := &oauth2.ListOAuthProvidersParams{}
 		if q.Search != "" {
 			params.Page = &page
 		} else {
@@ -134,7 +134,7 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*oauth2
 			return nil, parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON400, resp.JSON500), "list")
 		}
 
-		var items []oauth2mgmt.OAuthProviderResponse
+		var items []oauth2.OAuthProviderResponse
 		if resp.JSON200.OauthProviders != nil {
 			items = *resp.JSON200.OauthProviders
 		}
@@ -158,7 +158,7 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*oauth2
 }
 
 // create registers a new OAuth provider and returns it as stored by the server.
-func create(ctx context.Context, c resource.Conn, v *oauth2mgmt.OAuthProviderResponse) (*oauth2mgmt.OAuthProviderResponse, error) {
+func create(ctx context.Context, c resource.Conn, v *oauth2.OAuthProviderResponse) (*oauth2.OAuthProviderResponse, error) {
 	client, err := authorize(ctx, c)
 	if err != nil {
 		return nil, err
@@ -192,7 +192,7 @@ func create(ctx context.Context, c resource.Conn, v *oauth2mgmt.OAuthProviderRes
 }
 
 // replace fully replaces an OAuth provider definition and returns it as stored.
-func replace(ctx context.Context, c resource.Conn, name string, v *oauth2mgmt.OAuthProviderResponse) (*oauth2mgmt.OAuthProviderResponse, error) {
+func replace(ctx context.Context, c resource.Conn, name string, v *oauth2.OAuthProviderResponse) (*oauth2.OAuthProviderResponse, error) {
 	client, err := authorize(ctx, c)
 	if err != nil {
 		return nil, err

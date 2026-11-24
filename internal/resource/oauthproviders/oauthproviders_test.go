@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2mgmt"
+	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2"
 	"github.com/ibm-verify/agent-identity-cli/internal/input"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
@@ -40,16 +40,16 @@ func TestTagsMatch(t *testing.T) {
 		}
 	}
 	for _, typ := range []reflect.Type{
-		reflect.TypeFor[oauth2mgmt.OAuthProviderResponse](),
-		reflect.TypeFor[oauth2mgmt.OAuthProviderWriteRequest](),
-		reflect.TypeFor[oauth2mgmt.OAuthProviderListResponse](),
-		reflect.TypeFor[oauth2mgmt.OAuthProviderTokenSettings](),
-		reflect.TypeFor[oauth2mgmt.OAuthProviderDCRSettings](),
-		reflect.TypeFor[oauth2mgmt.OAuthProviderDCREndpointAuthentication](),
-		reflect.TypeFor[oauth2mgmt.OAuthProviderDCRRegistrationAccessToken](),
-		reflect.TypeFor[oauth2mgmt.OAuthProviderDCRSoftwareStatementValidation](),
-		reflect.TypeFor[oauth2mgmt.Error](),
-		reflect.TypeFor[oauth2mgmt.ListOAuthProvidersParams](),
+		reflect.TypeFor[oauth2.OAuthProviderResponse](),
+		reflect.TypeFor[oauth2.OAuthProviderWriteRequest](),
+		reflect.TypeFor[oauth2.OAuthProviderListResponse](),
+		reflect.TypeFor[oauth2.OAuthProviderTokenSettings](),
+		reflect.TypeFor[oauth2.OAuthProviderDCRSettings](),
+		reflect.TypeFor[oauth2.OAuthProviderDCREndpointAuthentication](),
+		reflect.TypeFor[oauth2.OAuthProviderDCRRegistrationAccessToken](),
+		reflect.TypeFor[oauth2.OAuthProviderDCRSoftwareStatementValidation](),
+		reflect.TypeFor[oauth2.Error](),
+		reflect.TypeFor[oauth2.ListOAuthProvidersParams](),
 	} {
 		check(typ)
 	}
@@ -58,13 +58,13 @@ func TestTagsMatch(t *testing.T) {
 func TestTemplateDecodesInBothFormats(t *testing.T) {
 	r := Resource()
 
-	var got []*oauth2mgmt.OAuthProviderResponse
+	var got []*oauth2.OAuthProviderResponse
 	for _, format := range []string{"yaml", "json"} {
 		b, err := r.Template(format)
 		if err != nil {
 			t.Fatal(err)
 		}
-		v, err := input.Decode[oauth2mgmt.OAuthProviderResponse](&input.Data{Bytes: b})
+		v, err := input.Decode[oauth2.OAuthProviderResponse](&input.Data{Bytes: b})
 		if err != nil {
 			t.Fatalf("%s: %v", format, err)
 		}
@@ -220,7 +220,7 @@ func TestGet(t *testing.T) {
 	if obj.ID != "default" || obj.Name != "default" {
 		t.Errorf("object: %+v", obj)
 	}
-	got := obj.Value.(*oauth2mgmt.OAuthProviderResponse)
+	got := obj.Value.(*oauth2.OAuthProviderResponse)
 	if got.Issuer != "https://auth.example.com" {
 		t.Errorf("issuer: %+v", got)
 	}
@@ -245,7 +245,7 @@ func TestList(t *testing.T) {
 	if l.Len != 2 {
 		t.Fatalf("len: %d", l.Len)
 	}
-	first := l.Items.([]*oauth2mgmt.OAuthProviderResponse)[0]
+	first := l.Items.([]*oauth2.OAuthProviderResponse)[0]
 	if first.DefinitionName != "default" || first.Issuer != "https://auth.example.com" {
 		t.Errorf("first: %+v", first)
 	}
@@ -291,7 +291,7 @@ func TestListSearch(t *testing.T) {
 	if l.Len != 1 {
 		t.Fatalf("expected 1 match, got %d", l.Len)
 	}
-	res := l.Items.([]*oauth2mgmt.OAuthProviderResponse)
+	res := l.Items.([]*oauth2.OAuthProviderResponse)
 	if res[0].DefinitionName != "custom" {
 		t.Errorf("match is not custom: %+v", res[0])
 	}
