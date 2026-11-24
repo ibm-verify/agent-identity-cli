@@ -1,0 +1,7 @@
+version: "2"
+
+linters:
+  exclusions:
+    presets:
+      # Ignore unchecked errors from Close and fmt.Fprint*, which have no useful handling here.
+      - std-error-handling
