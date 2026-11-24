@@ -14,7 +14,16 @@ import (
 	"github.com/ibm-verify/agent-identity-cli/internal/input"
 	"github.com/ibm-verify/agent-identity-cli/internal/profile"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/agents"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/clients"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/foo"
 )
+
+func init() {
+	resourceList = func() []*resource.Resource {
+		return []*resource.Resource{foo.Resource(), agents.Resource(), clients.Resource()}
+	}
+}
 
 // stateless sets the stateless-mode variables and an empty state directory.
 func stateless(t *testing.T) {
