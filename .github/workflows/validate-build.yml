@@ -1,0 +1,29 @@
+name: validate-build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [ opened, edited, reopened, synchronize ]
+    branches:
+      - main
+  merge_group:
+    types: [ checks_requested ]
+
+jobs:
+  bin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Check formatting, vet and test
+        run: make check
+      - name: Build ibm-agentid
+        run: make clean build
+      - name: Build all variants of ibm-agentid
+        run: make clean build-all
