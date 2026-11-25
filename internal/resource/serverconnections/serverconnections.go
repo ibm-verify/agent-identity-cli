@@ -87,7 +87,7 @@ func Resource() *resource.Resource {
 	d := &resource.Def[platform.ServerConnection]{
 		Name:     "server-connections",
 		Singular: "server-connection",
-		Aliases:  []string{"server-connection", "server_connections", "server_connection"},
+		Aliases:  []string{"server-connection", "server_connections", "server_connection", "sc"},
 		Template: template,
 		Columns: []resource.Column[platform.ServerConnection]{
 			{Header: "TYPE", Value: func(s *platform.ServerConnection) string { return resource.Str((*string)(&s.Type)) }},
