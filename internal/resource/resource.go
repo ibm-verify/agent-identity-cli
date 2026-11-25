@@ -5,6 +5,7 @@ package resource
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -48,6 +49,43 @@ func FirstError[T any](errs ...*T) *T {
 		}
 	}
 	return nil
+}
+
+// APIError is the error payload of the OAuth2 and platform APIs. The generated
+// clients each have their own type of these fields, and a pointer to one of
+// them converts to *APIError, so that ParseError serves them all.
+type APIError struct {
+	Error            string  `json:"error"`
+	ErrorDescription *string `json:"error_description,omitempty"`
+}
+
+// ParseError turns a failed response into the error to return. A 401 and a
+// 404 have their own errors, and singular names the object for the 404.
+// Otherwise the server's message is shown as received: apiErr is the payload
+// that the generated client decoded, and the body is tried when it is nil.
+func ParseError(status int, body []byte, apiErr *APIError, singular, target string) error {
+	switch status {
+	case http.StatusUnauthorized:
+		return Unauthorized()
+	case http.StatusNotFound:
+		return NotFound(singular, target)
+	}
+	if apiErr == nil && len(body) > 0 {
+		var e APIError
+		if err := json.Unmarshal(body, &e); err == nil && e.Error != "" {
+			apiErr = &e
+		}
+	}
+	if apiErr != nil && apiErr.Error != "" {
+		if apiErr.ErrorDescription != nil && *apiErr.ErrorDescription != "" {
+			return fmt.Errorf("%s: %s", apiErr.Error, *apiErr.ErrorDescription)
+		}
+		return errors.New(apiErr.Error)
+	}
+	if len(body) > 0 {
+		return fmt.Errorf("server returned status code %d: %s", status, string(body))
+	}
+	return fmt.Errorf("server returned status code %d", status)
 }
 
 // Conn is what a definition needs to call the server: the base URL, a bearer

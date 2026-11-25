@@ -3,8 +3,6 @@ package clients
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"path"
@@ -22,30 +20,9 @@ func authorize(ctx context.Context, c resource.Conn) (*oauth2.ClientWithResponse
 	return oauth2.NewClientWithResponses(c.Server, oauth2.WithHTTPClient(d))
 }
 
-// parseError translates an HTTP status code and OIDC error payload to a CLI resource error.
+// parseError translates a failed response to a CLI resource error.
 func parseError(statusCode int, body []byte, apiErr *oauth2.Error, target string) error {
-	switch statusCode {
-	case http.StatusUnauthorized:
-		return resource.Unauthorized()
-	case http.StatusNotFound:
-		return resource.NotFound("client", target)
-	}
-	if apiErr == nil && len(body) > 0 {
-		var e oauth2.Error
-		if err := json.Unmarshal(body, &e); err == nil && e.Error != "" {
-			apiErr = &e
-		}
-	}
-	if apiErr != nil && apiErr.Error != "" {
-		if apiErr.ErrorDescription != nil && *apiErr.ErrorDescription != "" {
-			return fmt.Errorf("%s: %s", apiErr.Error, *apiErr.ErrorDescription)
-		}
-		return errors.New(apiErr.Error)
-	}
-	if len(body) > 0 {
-		return fmt.Errorf("server returned status code %d: %s", statusCode, string(body))
-	}
-	return fmt.Errorf("server returned status code %d", statusCode)
+	return resource.ParseError(statusCode, body, (*resource.APIError)(apiErr), "client", target)
 }
 
 // toWriteRequest converts a Client to the create/replace request body. The two

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -94,5 +95,39 @@ func TestFirstError(t *testing.T) {
 	a, b := &payload{1}, &payload{2}
 	if FirstError(nil, a, b) != a || FirstError[payload](nil, nil) != nil || FirstError[payload]() != nil {
 		t.Error("FirstError should return the first non-nil payload")
+	}
+}
+
+func TestParseError(t *testing.T) {
+	desc := "No such thing"
+	empty := ""
+	for _, tc := range []struct {
+		name   string
+		status int
+		body   string
+		api    *APIError
+		target error
+		text   string
+	}{
+		{"401", http.StatusUnauthorized, "", nil, ErrUnauthorized, ""},
+		{"404", http.StatusNotFound, `{"error":"x"}`, &APIError{Error: "x"}, ErrNotFound, `no thing "t" was found`},
+		{"payload with description", http.StatusBadRequest, "", &APIError{Error: "invalid_request", ErrorDescription: &desc}, nil, "invalid_request: No such thing"},
+		{"payload with empty description", http.StatusBadRequest, "", &APIError{Error: "invalid_request", ErrorDescription: &empty}, nil, "invalid_request"},
+		{"payload without code, body is used", http.StatusBadRequest, `{"error":"from_body","error_description":"d"}`, &APIError{}, nil, "server returned status code 400"},
+		{"no payload, body is parsed", http.StatusConflict, `{"error":"conflict","error_description":"exists"}`, nil, nil, "conflict: exists"},
+		{"no payload, body is not an error", http.StatusInternalServerError, "boom", nil, nil, "server returned status code 500: boom"},
+		{"nothing at all", http.StatusInternalServerError, "", nil, nil, "server returned status code 500"},
+	} {
+		err := ParseError(tc.status, []byte(tc.body), tc.api, "thing", "t")
+		if err == nil {
+			t.Errorf("%s: no error", tc.name)
+			continue
+		}
+		if tc.target != nil && !errors.Is(err, tc.target) {
+			t.Errorf("%s: want %v, got %v", tc.name, tc.target, err)
+		}
+		if tc.text != "" && !strings.Contains(err.Error(), tc.text) {
+			t.Errorf("%s: %q should contain %q", tc.name, err, tc.text)
+		}
 	}
 }
