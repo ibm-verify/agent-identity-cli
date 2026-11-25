@@ -232,25 +232,14 @@ Asks `[y/N]` on stderr. With no input, such as in a script, nothing is deleted a
 |---|---|---|
 | `agents` | get, create, replace, patch, delete | An agent registered with the server. |
 | `clients` | get, create, replace, delete | An OAuth client. |
-| `server-connections` | get, create, replace, delete | A reusable outbound HTTP or LDAP connection. |
+| `server-connections` (`sc`) | get, create, replace, delete | A reusable outbound HTTP or LDAP connection. |
 | `oauth-providers` | get, create, replace, delete | An OAuth 2.0 / OIDC provider definition. |
 | `keystores` | get, create, replace, delete | A named keystore of keys and certificates. |
 | `auth-detail-types` | get, create, replace, delete | An RFC 9396 authorization detail type. |
 | `custom-token-types` | get, create, replace, delete | A trusted external token issuer, for token exchange. |
 | `rules` | get, create, replace, delete | A server-side JavaScript mapping rule or access policy. |
 
-Run `ibm-agentid create <resource> --template` for every property of a resource, with comments. For example, an agent:
-
-```yaml
-displayName: Production API Service   # required. Unique, max 255 characters
-description: API service for production workloads
-status: UNDER_REVIEW                  # ACTIVE | SUSPENDED | UNDER_REVIEW
-externalIds: [ext-agent-123]          # max 10
-tags: [production, api-service]       # max 10
-owners:                               # max 5
-  - type: User
-    value: user-123
-```
+Run `ibm-agentid create <resource> --template` to print every property of a resource, with comments. The model of each resource is defined by the API: see its schema in [`api/openapi.yaml`](api/openapi.yaml).
 
 Things worth knowing:
 
@@ -260,7 +249,7 @@ Things worth knowing:
 - `auth-detail-types` and `custom-token-types` get a server-assigned ID that is the base64url of the type and the name.
 - Deleting a keystore, rule or custom token type that does not exist succeeds.
 
-Properties, limits and notes for each resource: [`docs/resources.md`](docs/resources.md).
+The schema to read for each resource, and what is specific to the CLI: [`docs/resources.md`](docs/resources.md).
 
 ---
 

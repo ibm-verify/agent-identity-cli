@@ -106,7 +106,7 @@ func TestResourceOffersConfiguredVerbs(t *testing.T) {
 	if r.Patch != nil {
 		t.Error("serverconnections must not offer patch verb since the API has no PATCH endpoint")
 	}
-	if r.Name != "server-connections" || r.Singular != "server-connection" || !reflect.DeepEqual(r.Aliases, []string{"server-connection", "server_connections", "server_connection"}) {
+	if r.Name != "server-connections" || r.Singular != "server-connection" || !reflect.DeepEqual(r.Aliases, []string{"server-connection", "server_connections", "server_connection", "sc"}) {
 		t.Errorf("names: %q %q %v", r.Name, r.Singular, r.Aliases)
 	}
 	if !r.ListFlags.Limit || !r.ListFlags.Page || !r.ListFlags.Search || r.ListFlags.Sort {

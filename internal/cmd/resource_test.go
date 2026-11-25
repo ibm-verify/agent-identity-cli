@@ -492,3 +492,21 @@ func TestHelpListsOnlyOfferedVerbs(t *testing.T) {
 		t.Errorf("plural name: %v", err)
 	}
 }
+
+// "sc" is the short alias of server-connections, under every verb.
+func TestServerConnectionShortAlias(t *testing.T) {
+	isolate(t)
+	for _, verb := range []string{"get", "create", "replace", "delete"} {
+		out, _, err := run(t, verb, "sc", "--help")
+		if err != nil || !strings.Contains(out, "server-connections") {
+			t.Errorf("%s sc --help: %q %v", verb, out, err)
+		}
+	}
+	full, _, err := run(t, "create", "server-connections", "--template")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if short, _, err := run(t, "create", "sc", "--template"); err != nil || short != full {
+		t.Errorf("create sc --template differs from create server-connections --template: %v", err)
+	}
+}
