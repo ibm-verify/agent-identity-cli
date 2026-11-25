@@ -88,3 +88,11 @@ func TestParseKeepsIDOnlyForTheCheck(t *testing.T) {
 		t.Errorf("a list: %v", err)
 	}
 }
+
+func TestFirstError(t *testing.T) {
+	type payload struct{ n int }
+	a, b := &payload{1}, &payload{2}
+	if FirstError(nil, a, b) != a || FirstError[payload](nil, nil) != nil || FirstError[payload]() != nil {
+		t.Error("FirstError should return the first non-nil payload")
+	}
+}

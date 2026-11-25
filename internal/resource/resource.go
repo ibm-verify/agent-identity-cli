@@ -39,6 +39,17 @@ func Unauthorized() error {
 	return i18n.Wrap(ErrUnauthorized, "resource.unauthorized", nil)
 }
 
+// FirstError returns the first of the error payloads that is not nil, or nil.
+// A generated client has a typed payload for each status code.
+func FirstError[T any](errs ...*T) *T {
+	for _, e := range errs {
+		if e != nil {
+			return e
+		}
+	}
+	return nil
+}
+
 // Conn is what a definition needs to call the server: the base URL, a bearer
 // token that the command layer has already made valid, and an HTTP client that
 // logs and applies the context's TLS settings.

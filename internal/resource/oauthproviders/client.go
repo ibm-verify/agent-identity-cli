@@ -11,38 +11,13 @@ import (
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
 
-// authDoer wraps an HttpRequestDoer to inject the Bearer token authorization header.
-type authDoer struct {
-	client oauth2.HttpRequestDoer
-	token  string
-}
-
-// Do performs the HTTP request, injecting the Bearer token authorization header first.
-func (d *authDoer) Do(req *http.Request) (*http.Response, error) {
-	req.Header.Set("Authorization", "Bearer "+d.token)
-	return d.client.Do(req)
-}
-
-// authorize constructs a ClientWithResponses configured with authorization.
+// authorize constructs a ClientWithResponses that sends the connection's bearer token.
 func authorize(ctx context.Context, c resource.Conn) (*oauth2.ClientWithResponses, error) {
-	if c.Token == "" {
-		return nil, resource.Unauthorized()
+	d, err := c.Doer()
+	if err != nil {
+		return nil, err
 	}
-	var httpClient oauth2.HttpRequestDoer = c.HTTP
-	if c.HTTP == nil {
-		httpClient = http.DefaultClient
-	}
-	return oauth2.NewClientWithResponses(c.Server, oauth2.WithHTTPClient(&authDoer{client: httpClient, token: c.Token}))
-}
-
-// firstError returns the first non-nil Error payload.
-func firstError(errs ...*oauth2.Error) *oauth2.Error {
-	for _, e := range errs {
-		if e != nil {
-			return e
-		}
-	}
-	return nil
+	return oauth2.NewClientWithResponses(c.Server, oauth2.WithHTTPClient(d))
 }
 
 // parseError translates an HTTP status code and error payload to a CLI resource error.
@@ -95,7 +70,7 @@ func get(ctx context.Context, c resource.Conn, name string) (*oauth2.OAuthProvid
 		return nil, err
 	}
 	if resp.StatusCode() != http.StatusOK || resp.JSON200 == nil {
-		return nil, parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON404, resp.JSON500), name)
+		return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON404, resp.JSON500), name)
 	}
 	return resp.JSON200, nil
 }
@@ -129,7 +104,7 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*oauth2
 			return nil, err
 		}
 		if resp.StatusCode() != http.StatusOK || resp.JSON200 == nil {
-			return nil, parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON400, resp.JSON500), "list")
+			return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON400, resp.JSON500), "list")
 		}
 
 		var items []oauth2.OAuthProviderResponse
@@ -168,7 +143,7 @@ func replace(ctx context.Context, c resource.Conn, name string, v *oauth2.OAuthP
 		return nil, err
 	}
 	if resp.StatusCode() != http.StatusOK {
-		return nil, parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON400, resp.JSON404, resp.JSON415, resp.JSON500), name)
+		return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON400, resp.JSON404, resp.JSON415, resp.JSON500), name)
 	}
 	if resp.JSON200 != nil {
 		return resp.JSON200, nil

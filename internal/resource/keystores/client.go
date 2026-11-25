@@ -13,38 +13,13 @@ import (
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
 
-// authDoer wraps an HttpRequestDoer to inject the Bearer token authorization header.
-type authDoer struct {
-	client platform.HttpRequestDoer
-	token  string
-}
-
-// Do performs the HTTP request, injecting the Bearer token authorization header first.
-func (d *authDoer) Do(req *http.Request) (*http.Response, error) {
-	req.Header.Set("Authorization", "Bearer "+d.token)
-	return d.client.Do(req)
-}
-
 // authorize constructs a ClientWithResponses that sends the connection's bearer token.
 func authorize(ctx context.Context, c resource.Conn) (*platform.ClientWithResponses, error) {
-	if c.Token == "" {
-		return nil, resource.Unauthorized()
+	d, err := c.Doer()
+	if err != nil {
+		return nil, err
 	}
-	var httpClient platform.HttpRequestDoer = c.HTTP
-	if c.HTTP == nil {
-		httpClient = http.DefaultClient
-	}
-	return platform.NewClientWithResponses(c.Server, platform.WithHTTPClient(&authDoer{client: httpClient, token: c.Token}))
-}
-
-// firstError returns the first non-nil Error payload.
-func firstError(errs ...*platform.Error) *platform.Error {
-	for _, e := range errs {
-		if e != nil {
-			return e
-		}
-	}
-	return nil
+	return platform.NewClientWithResponses(c.Server, platform.WithHTTPClient(d))
 }
 
 // parseError translates an HTTP status code and error payload to a CLI resource error.
@@ -108,7 +83,7 @@ func get(ctx context.Context, c resource.Conn, name string) (*Keystore, error) {
 		return nil, err
 	}
 	if resp.StatusCode() != http.StatusOK || resp.JSON200 == nil {
-		return nil, parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON403, resp.JSON404, resp.JSON500), name)
+		return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON403, resp.JSON404, resp.JSON500), name)
 	}
 	return fromSummary(*resp.JSON200), nil
 }
@@ -142,7 +117,7 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Keysto
 			return nil, err
 		}
 		if resp.StatusCode() != http.StatusOK || resp.JSON200 == nil {
-			return nil, parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON400, resp.JSON403, resp.JSON500), "list")
+			return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON400, resp.JSON403, resp.JSON500), "list")
 		}
 
 		var summaries []platform.KeystoreSummary
@@ -181,7 +156,7 @@ func create(ctx context.Context, c resource.Conn, v *Keystore) (*Keystore, error
 		return nil, err
 	}
 	if resp.StatusCode() != http.StatusCreated {
-		return nil, parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON400, resp.JSON403, resp.JSON409, resp.JSON415, resp.JSON500), v.KeystoreName)
+		return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON400, resp.JSON403, resp.JSON409, resp.JSON415, resp.JSON500), v.KeystoreName)
 	}
 
 	// The name is the last segment of Location, falling back to the request name.
@@ -212,7 +187,7 @@ func replace(ctx context.Context, c resource.Conn, name string, v *Keystore) (*K
 		return nil, err
 	}
 	if resp.StatusCode() != http.StatusOK {
-		return nil, parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON400, resp.JSON403, resp.JSON404, resp.JSON415, resp.JSON500), name)
+		return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON400, resp.JSON403, resp.JSON404, resp.JSON415, resp.JSON500), name)
 	}
 	return get(ctx, c, name)
 }
@@ -229,7 +204,7 @@ func remove(ctx context.Context, c resource.Conn, name string) error {
 		return err
 	}
 	if resp.StatusCode() != http.StatusNoContent {
-		return parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON403, resp.JSON500), name)
+		return parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON403, resp.JSON500), name)
 	}
 	return nil
 }
