@@ -28,11 +28,9 @@ schema: |
     },
     "required": ["type", "path", "capabilities"]
   }
-# How the authorization detail signature is calculated: full_hash,
-# partial_hash or custom. The server uses full_hash when it is not given.
+# How the authorization detail signature is calculated: full_hash or
+# partial_hash. The server uses full_hash when it is not given.
 signatureStrategy: full_hash
-# Rule used to calculate the signature when signatureStrategy is custom.
-# signatureRule: ""
 # Whether inline HTML (true) or a template label (false) is used for consent.
 inlineMode: false
 # Whether a custom privacy model is used.
