@@ -27,7 +27,8 @@ token_settings:
 `
 
 // Resource returns the definition of oauth-providers, which is all that cmd.NewRoot
-// needs. The API has no PATCH, so the patch verb is not offered.
+// needs. There is one provider for now, so create and delete are not offered.
+// The API has no PATCH, so the patch verb is not offered.
 func Resource() *resource.Resource {
 	d := &resource.Def[oauth2.OAuthProviderResponse]{
 		Name:     "oauth-providers",
@@ -62,9 +63,7 @@ func Resource() *resource.Resource {
 
 		Get:     get,
 		List:    list,
-		Create:  create,
 		Replace: replace,
-		Delete:  remove,
 	}
 	return d.Resource()
 }

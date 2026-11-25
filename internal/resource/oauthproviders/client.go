@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"path"
 
 	"github.com/ibm-verify/agent-identity-cli/internal/client/oauth2"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
@@ -157,40 +155,6 @@ func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*oauth2
 	return providers, nil
 }
 
-// create registers a new OAuth provider and returns it as stored by the server.
-func create(ctx context.Context, c resource.Conn, v *oauth2.OAuthProviderResponse) (*oauth2.OAuthProviderResponse, error) {
-	client, err := authorize(ctx, c)
-	if err != nil {
-		return nil, err
-	}
-
-	req := toWriteRequest(v)
-	resp, err := client.CreateOAuthProviderWithResponse(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode() != http.StatusCreated {
-		return nil, parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON400, resp.JSON409, resp.JSON415, resp.JSON500), v.DefinitionName)
-	}
-	if resp.JSON201 != nil {
-		return resp.JSON201, nil
-	}
-
-	// No body: the definition name is the last segment of Location.
-	name := v.DefinitionName
-	if resp.Headers201 != nil && resp.Headers201.Location != nil {
-		if u, err := url.Parse(*resp.Headers201.Location); err == nil {
-			if base := path.Base(u.Path); base != "" && base != "." && base != "/" {
-				name = base
-			}
-		}
-	}
-	if name == "" {
-		return v, nil
-	}
-	return get(ctx, c, name)
-}
-
 // replace fully replaces an OAuth provider definition and returns it as stored.
 func replace(ctx context.Context, c resource.Conn, name string, v *oauth2.OAuthProviderResponse) (*oauth2.OAuthProviderResponse, error) {
 	client, err := authorize(ctx, c)
@@ -210,20 +174,4 @@ func replace(ctx context.Context, c resource.Conn, name string, v *oauth2.OAuthP
 		return resp.JSON200, nil
 	}
 	return get(ctx, c, name)
-}
-
-// remove deletes an OAuth provider by definition name.
-func remove(ctx context.Context, c resource.Conn, name string) error {
-	client, err := authorize(ctx, c)
-	if err != nil {
-		return err
-	}
-	resp, err := client.DeleteOAuthProviderWithResponse(ctx, name)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode() != http.StatusNoContent {
-		return parseError(resp.StatusCode(), resp.Body, firstError(resp.JSON404, resp.JSON500), name)
-	}
-	return nil
 }

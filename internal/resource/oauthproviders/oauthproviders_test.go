@@ -90,11 +90,14 @@ func TestTemplateDecodesInBothFormats(t *testing.T) {
 
 func TestResourceOffersConfiguredVerbs(t *testing.T) {
 	r := Resource()
-	if r.Get == nil || r.List == nil || r.Find == nil || r.Create == nil || r.Replace == nil || r.Delete == nil {
+	if r.Get == nil || r.List == nil || r.Find == nil || r.Replace == nil {
 		t.Errorf("oauth-providers missing expected verbs: %+v", r)
 	}
 	if r.Patch != nil {
 		t.Error("oauth-providers must not offer patch verb since the API has no PATCH endpoint")
+	}
+	if r.Create != nil || r.Delete != nil {
+		t.Error("oauth-providers must not offer create or delete: there is one provider for now")
 	}
 	if r.Name != "oauth-providers" || r.Singular != "oauth-provider" || !reflect.DeepEqual(r.Aliases, []string{"oauth-provider", "oauth_providers", "oauth_provider"}) {
 		t.Errorf("names: %q %q %v", r.Name, r.Singular, r.Aliases)
@@ -149,9 +152,6 @@ func parse(t *testing.T, r *resource.Resource, text string) *resource.Payload {
 func TestStrip(t *testing.T) {
 	r := Resource()
 	conn, calls := mock(t, func(c call) (int, http.Header, string) {
-		if c.Method == http.MethodPost {
-			return http.StatusCreated, nil, providerJSON
-		}
 		return http.StatusOK, nil, providerJSON
 	})
 
@@ -164,7 +164,7 @@ updated_at: 2000
 	if p.Empty() {
 		t.Fatal("the name is left, so the payload is not empty")
 	}
-	if _, err := r.Create(t.Context(), conn, p); err != nil {
+	if _, err := r.Replace(t.Context(), conn, "default", p); err != nil {
 		t.Fatal(err)
 	}
 	body := (*calls)[0].Body
@@ -190,15 +190,10 @@ func TestServerNeedsAToken(t *testing.T) {
 			return err
 		},
 		"find": func() error { _, err := r.Find(t.Context(), conn, "default"); return err },
-		"create": func() error {
-			_, err := r.Create(t.Context(), conn, parse(t, r, "definition_name: d\nissuer: https://auth.example.com\n"))
-			return err
-		},
 		"replace": func() error {
 			_, err := r.Replace(t.Context(), conn, "default", parse(t, r, "definition_name: default\nissuer: https://auth.example.com\n"))
 			return err
 		},
-		"delete": func() error { return r.Delete(t.Context(), conn, "default") },
 	} {
 		if err := act(); !errors.Is(err, resource.ErrUnauthorized) {
 			t.Errorf("%s with no token: %v", name, err)
@@ -331,33 +326,6 @@ func TestFind(t *testing.T) {
 	}
 }
 
-func TestCreate(t *testing.T) {
-	r := Resource()
-	h := http.Header{}
-	h.Set("Location", "/v1.0/oauth_providers/created-prov")
-	conn, calls := mock(t, func(c call) (int, http.Header, string) {
-		if c.Method == http.MethodPost {
-			return http.StatusCreated, h, `{"definition_name":"created-prov","issuer":"https://auth.example.com"}`
-		}
-		return http.StatusOK, nil, `{"definition_name":"created-prov","issuer":"https://auth.example.com"}`
-	})
-
-	v := parse(t, r, `definition_name: created-prov
-issuer: https://auth.example.com
-`)
-	created, err := r.Create(t.Context(), conn, v)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if created.ID != "created-prov" {
-		t.Errorf("created id: %+v", created)
-	}
-	c := (*calls)[0]
-	if c.Method != http.MethodPost || c.Path != "/v1.0/oauth_providers" || c.Auth != "Bearer tok" {
-		t.Errorf("request: %+v", c)
-	}
-}
-
 func TestReplace(t *testing.T) {
 	r := Resource()
 	conn, calls := mock(t, func(c call) (int, http.Header, string) {
@@ -379,21 +347,6 @@ issuer: https://replaced.example.com
 	}
 	c := (*calls)[0]
 	if c.Method != http.MethodPut || c.Path != "/v1.0/oauth_providers/default" {
-		t.Errorf("request: %+v", c)
-	}
-}
-
-func TestRemove(t *testing.T) {
-	r := Resource()
-	conn, calls := mock(t, func(c call) (int, http.Header, string) {
-		return http.StatusNoContent, nil, ""
-	})
-
-	if err := r.Delete(t.Context(), conn, "default"); err != nil {
-		t.Fatal(err)
-	}
-	c := (*calls)[0]
-	if c.Method != http.MethodDelete || c.Path != "/v1.0/oauth_providers/default" || c.Auth != "Bearer tok" {
 		t.Errorf("request: %+v", c)
 	}
 }

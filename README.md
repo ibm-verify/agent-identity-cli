@@ -93,7 +93,7 @@ Run `ibm-agentid <command> --help` for the flags and examples of a command.
 | `agents` | get, create, replace, patch, delete |
 | `clients` | get, create, replace, delete |
 | `server-connections` (`sc`) | get, create, replace, delete |
-| `oauth-providers` | get, create, replace, delete |
+| `oauth-providers` | get, replace |
 | `keystores` | get, create, replace, delete |
 | `auth-detail-types` | get, create, replace, delete |
 | `custom-token-types` | get, create, replace, delete |

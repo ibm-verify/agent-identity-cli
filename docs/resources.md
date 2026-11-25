@@ -11,7 +11,7 @@ Each resource has a plural name, such as `agents`, and a singular alias, such as
 | `agents` | get, create, replace, patch, delete | `Registry` |
 | `clients` | get, create, replace, delete | `OAuth2` |
 | `server-connections` | get, create, replace, delete | `Platform` |
-| `oauth-providers` | get, create, replace, delete | `OAuth2` |
+| `oauth-providers` | get, replace | `OAuth2` |
 | `keystores` | get, create, replace, delete | `Platform` |
 | `auth-detail-types` | get, create, replace, delete | `OAuth2` |
 | `custom-token-types` | get, create, replace, delete | `OAuth2` |
