@@ -11,32 +11,13 @@ import (
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 )
 
-// authDoer wraps an HttpRequestDoer to inject the Bearer token authorization header.
-type authDoer struct {
-	client registry.HttpRequestDoer
-	token  string
-}
-
-// Do performs the HTTP request, injecting the Bearer token authorization header first.
-func (d *authDoer) Do(req *http.Request) (*http.Response, error) {
-	req.Header.Set("Authorization", "Bearer "+d.token)
-	return d.client.Do(req)
-}
-
-// newClient constructs a ClientWithResponses configured with authorization.
+// newClient constructs a ClientWithResponses that sends the connection's bearer token.
 func newClient(ctx context.Context, c resource.Conn) (*registry.ClientWithResponses, error) {
-	if c.Token == "" {
-		return nil, resource.Unauthorized()
+	d, err := c.Doer()
+	if err != nil {
+		return nil, err
 	}
-	httpClient := c.HTTP
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
-	doer := &authDoer{
-		client: httpClient,
-		token:  c.Token,
-	}
-	return registry.NewClientWithResponses(c.Server, registry.WithHTTPClient(doer))
+	return registry.NewClientWithResponses(c.Server, registry.WithHTTPClient(d))
 }
 
 // parseError translates standard SCIM error payloads and HTTP status codes to CLI resource errors.

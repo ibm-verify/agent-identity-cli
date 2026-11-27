@@ -1,0 +1,186 @@
+package keystores
+
+import (
+	"context"
+	"net/http"
+	"net/url"
+	"path"
+
+	"github.com/ibm-verify/agent-identity-cli/internal/client/platform"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource"
+)
+
+// authorize constructs a ClientWithResponses that sends the connection's bearer token.
+func authorize(ctx context.Context, c resource.Conn) (*platform.ClientWithResponses, error) {
+	d, err := c.Doer()
+	if err != nil {
+		return nil, err
+	}
+	return platform.NewClientWithResponses(c.Server, platform.WithHTTPClient(d))
+}
+
+// parseError translates a failed response to a CLI resource error.
+func parseError(statusCode int, body []byte, apiErr *platform.Error, target string) error {
+	return resource.ParseError(statusCode, body, (*resource.APIError)(apiErr), "keystore", target)
+}
+
+// fromSummary converts what the server returns on get and list to a Keystore.
+// The raw data and password are never returned, so they stay empty.
+func fromSummary(s platform.KeystoreSummary) *Keystore {
+	k := &Keystore{CreatedAt: s.CreatedAt, UpdatedAt: s.UpdatedAt}
+	if s.KeystoreName != nil {
+		k.KeystoreName = *s.KeystoreName
+	}
+	if s.KeystoreType != nil {
+		k.KeystoreType = *s.KeystoreType
+	}
+	return k
+}
+
+// toWriteRequest converts a Keystore to the create/replace request body,
+// dropping the read-only timestamps.
+func toWriteRequest(k *Keystore) platform.KeystoreWriteRequest {
+	return platform.KeystoreWriteRequest{
+		KeystoreData:     k.KeystoreData,
+		KeystoreName:     k.KeystoreName,
+		KeystorePassword: k.KeystorePassword,
+		KeystoreType:     platform.KeystoreWriteRequestKeystoreType(k.KeystoreType),
+	}
+}
+
+// get retrieves a keystore by name.
+func get(ctx context.Context, c resource.Conn, name string) (*Keystore, error) {
+	client, err := authorize(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.GetKeystoreWithResponse(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode() != http.StatusOK || resp.JSON200 == nil {
+		return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON403, resp.JSON404, resp.JSON500), name)
+	}
+	return fromSummary(*resp.JSON200), nil
+}
+
+// list returns keystores. With a search term it walks every page and keeps the
+// keystores whose name equals the term; otherwise it asks the server for the
+// requested page.
+func list(ctx context.Context, c resource.Conn, q resource.ListQuery) ([]*Keystore, error) {
+	client, err := authorize(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+
+	var stores []*Keystore
+	seen := 0
+	for page := 1; ; page++ {
+		params := &platform.ListKeystoresParams{}
+		if q.Search != "" {
+			params.Page = &page
+		} else {
+			if q.Limit > 0 {
+				params.Limit = &q.Limit
+			}
+			if q.Page > 0 {
+				params.Page = &q.Page
+			}
+		}
+
+		resp, err := client.ListKeystoresWithResponse(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode() != http.StatusOK || resp.JSON200 == nil {
+			return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON400, resp.JSON403, resp.JSON500), "list")
+		}
+
+		var summaries []platform.KeystoreSummary
+		if resp.JSON200.Keystores != nil {
+			summaries = *resp.JSON200.Keystores
+		}
+		for _, s := range summaries {
+			k := fromSummary(s)
+			if q.Search != "" && k.KeystoreName != q.Search {
+				continue
+			}
+			stores = append(stores, k)
+		}
+
+		seen += len(summaries)
+		if q.Search == "" || len(summaries) == 0 {
+			break
+		}
+		if t := resp.JSON200.Total; t != nil && seen >= *t {
+			break
+		}
+	}
+	return stores, nil
+}
+
+// create registers a new keystore and returns it as stored by the server. The
+// API answers with no body, so the keystore is read back.
+func create(ctx context.Context, c resource.Conn, v *Keystore) (*Keystore, error) {
+	client, err := authorize(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.CreateKeystoreWithResponse(ctx, toWriteRequest(v))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode() != http.StatusCreated {
+		return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON400, resp.JSON403, resp.JSON409, resp.JSON415, resp.JSON500), v.KeystoreName)
+	}
+
+	// The name is the last segment of Location, falling back to the request name.
+	name := v.KeystoreName
+	if resp.Headers201 != nil && resp.Headers201.Location != nil {
+		if u, err := url.Parse(*resp.Headers201.Location); err == nil {
+			if base := path.Base(u.Path); base != "" && base != "." && base != "/" {
+				name = base
+			}
+		}
+	}
+	if name == "" {
+		return v, nil
+	}
+	return get(ctx, c, name)
+}
+
+// replace fully replaces a keystore and returns it as stored. The API answers
+// with no body, so the keystore is read back.
+func replace(ctx context.Context, c resource.Conn, name string, v *Keystore) (*Keystore, error) {
+	client, err := authorize(ctx, c)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.ReplaceKeystoreWithResponse(ctx, name, toWriteRequest(v))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode() != http.StatusOK {
+		return nil, parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON400, resp.JSON403, resp.JSON404, resp.JSON415, resp.JSON500), name)
+	}
+	return get(ctx, c, name)
+}
+
+// remove deletes a keystore by name. The API is idempotent: deleting a keystore
+// that does not exist succeeds.
+func remove(ctx context.Context, c resource.Conn, name string) error {
+	client, err := authorize(ctx, c)
+	if err != nil {
+		return err
+	}
+	resp, err := client.DeleteKeystoreWithResponse(ctx, name)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode() != http.StatusNoContent {
+		return parseError(resp.StatusCode(), resp.Body, resource.FirstError(resp.JSON403, resp.JSON500), name)
+	}
+	return nil
+}

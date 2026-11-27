@@ -15,13 +15,23 @@ import (
 	"github.com/ibm-verify/agent-identity-cli/internal/profile"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/agents"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/authdetailtypes"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/clients"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/customtokentypes"
 	"github.com/ibm-verify/agent-identity-cli/internal/resource/foo"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/keystores"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/oauthproviders"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/rules"
+	"github.com/ibm-verify/agent-identity-cli/internal/resource/serverconnections"
 )
 
 func init() {
 	resourceList = func() []*resource.Resource {
-		return []*resource.Resource{foo.Resource(), agents.Resource(), clients.Resource()}
+		return []*resource.Resource{
+			foo.Resource(), agents.Resource(), clients.Resource(), serverconnections.Resource(),
+			oauthproviders.Resource(), keystores.Resource(), authdetailtypes.Resource(),
+			customtokentypes.Resource(), rules.Resource(),
+		}
 	}
 }
 
@@ -480,5 +490,23 @@ func TestHelpListsOnlyOfferedVerbs(t *testing.T) {
 	// Aliases work under every verb.
 	if _, _, err := run(t, "create", "foos", "--template"); err != nil {
 		t.Errorf("plural name: %v", err)
+	}
+}
+
+// "sc" is the short alias of server-connections, under every verb.
+func TestServerConnectionShortAlias(t *testing.T) {
+	isolate(t)
+	for _, verb := range []string{"get", "create", "replace", "delete"} {
+		out, _, err := run(t, verb, "sc", "--help")
+		if err != nil || !strings.Contains(out, "server-connections") {
+			t.Errorf("%s sc --help: %q %v", verb, out, err)
+		}
+	}
+	full, _, err := run(t, "create", "server-connections", "--template")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if short, _, err := run(t, "create", "sc", "--template"); err != nil || short != full {
+		t.Errorf("create sc --template differs from create server-connections --template: %v", err)
 	}
 }
